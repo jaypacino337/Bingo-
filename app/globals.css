@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-ink antialiased;
+    font-feature-settings: 'ss01' on, 'cv11' on;
+  }
+
+  ::selection {
+    @apply bg-pump-300 text-forest-900;
+  }
+}
+
+@layer components {
+  /* Small uppercase mono eyebrow used above every section heading. */
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-label text-pump-600;
+  }
+
+  .eyebrow-on-dark {
+    @apply font-mono text-[11px] uppercase tracking-label text-pump-400;
+  }
+
+  .h-display {
+    @apply text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[44px] lg:text-[52px];
+  }
+
+  /* The chunky bordered buttons from the design. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border-2 px-5 py-3
+           text-[13px] font-bold uppercase tracking-[0.08em] transition
+           active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn border-forest-900 bg-pump-300 text-forest-900 shadow-lift
+           hover:bg-pump-400 disabled:bg-pump-200 disabled:text-forest-600;
+  }
+
+  .btn-ghost {
+    @apply btn border-forest-900 bg-white text-forest-900 shadow-lift hover:bg-mint-100;
+  }
+
+  .btn-dark {
+    @apply btn border-pump-500/40 bg-forest-800 text-pump-200 hover:border-pump-400 hover:bg-forest-700;
+  }
+
+  .panel {
+    @apply rounded-2xl border-2 border-forest-900 bg-white;
+  }
+
+  .panel-dark {
+    @apply rounded-2xl border border-pump-500/25 bg-forest-800/70;
+  }
+
+  .stat-label {
+    @apply font-mono text-[10px] uppercase tracking-label text-pump-400/70;
+  }
+}
+
+/* Hide the scrollbar on the horizontal ball rail without losing scroll. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle hall texture behind the dark sections. */
+.hall-glow {
+  background-image:
+    radial-gradient(60% 45% at 50% 0%, rgba(91, 228, 155, 0.16), transparent 70%),
+    radial-gradient(40% 40% at 85% 60%, rgba(36, 195, 122, 0.1), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
