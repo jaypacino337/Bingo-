@@ -150,6 +150,14 @@ export const config = {
    * with an address into the game.
    */
   devFakeHolders: bool('DEV_FAKE_HOLDERS', false),
+
+  /**
+   * TEST MODE. Seats this many simulated entrants at the start of every round
+   * so you can watch a full game play out with a populated floor before real
+   * holders exist. Requires DEV_FAKE_HOLDERS — the server refuses to start
+   * otherwise, so simulated players can never appear in a real game.
+   */
+  demoPlayers: num('DEMO_PLAYERS', 0),
 } as const;
 
 if (Math.abs(config.prizeShare + config.jackpotShare - 1) > 1e-9) {
@@ -197,5 +205,6 @@ export function publicConfig() {
     jackpotShare: config.jackpotShare,
     potSource: config.potSource,
     treasuryWallet: config.treasuryWallet ?? null,
+    demoMode: config.devFakeHolders,
   };
 }

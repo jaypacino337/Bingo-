@@ -89,6 +89,16 @@ export function preflight(): void {
       'DEV_FAKE_HOLDERS is ON. Token balances are FAKE and anyone can join with any address. Never leave this on for a live game.',
     );
   }
+  if (config.demoPlayers > 0 && !config.devFakeHolders) {
+    problems.push(
+      `DEMO_PLAYERS is ${config.demoPlayers} but DEV_FAKE_HOLDERS is off. Simulated entrants must never appear in a real game — set DEV_FAKE_HOLDERS=true for a test game, or DEMO_PLAYERS=0 to go live.`,
+    );
+  }
+  if (config.demoPlayers > 0) {
+    warnings.push(
+      `TEST GAME: ${config.demoPlayers} simulated entrants will be seated every round. Set DEMO_PLAYERS=0 before launch.`,
+    );
+  }
   if (config.corsOrigins.includes('*')) {
     warnings.push('CORS_ORIGINS is "*" — lock it to your Vercel domain before launch.');
   }

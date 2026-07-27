@@ -16,12 +16,6 @@ import { compactTokens, countdown, patternLabel, shortWallet, sol } from '@/lib/
 import { buyUrl, site } from '@/lib/site';
 import { useGame, useNow, useStoredWallet } from '@/lib/useGame';
 
-const SPEEDS = [
-  { label: 'Calm', value: 0.55 },
-  { label: 'Normal', value: 1 },
-  { label: 'Rowdy', value: 1.8 },
-] as const;
-
 /**
  * Reads ?w= straight off the URL rather than via useSearchParams, so this
  * component has no dependency on Next's routing internals — it is mounted
@@ -37,14 +31,12 @@ function useWalletParam(): string | null {
 
 export function GameRoom() {
   const urlWallet = useWalletParam();
-  const { state, connection, error: connectionError } = useGame();
+  const { state, connection } = useGame();
   const now = useNow(250);
   const [storedWallet, setStoredWallet] = useStoredWallet();
 
   const [holder, setHolder] = useState<HolderInfo | null>(null);
-  const [joinError, setJoinError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
-  const [speedIndex, setSpeedIndex] = useState(1);
   const [activeCard, setActiveCard] = useState(0);
   const [showBoard, setShowBoard] = useState(false);
   const [dismissedRound, setDismissedRound] = useState<number | null>(null);
@@ -113,11 +105,12 @@ export function GameRoom() {
   const join = useCallback(async () => {
     if (!wallet) return;
     setJoining(true);
-    setJoinError(null);
     try {
       await joinGame(wallet);
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : 'Could not take your seat.');
+      // Kept off the page on purpose — the seat button simply stays available
+      // and the next lobby retries. Details go to the console for debugging.
+      console.warn('[bingo] join failed:', err);
     } finally {
       setJoining(false);
     }
@@ -171,31 +164,22 @@ export function GameRoom() {
           </div>
 
           <div className="flex items-center gap-2">
+            {state?.demoMode ? (
+              <span className="rounded-md border border-pump-500/30 px-2 py-1 font-mono text-[9px] uppercase tracking-label text-pump-100/50">
+                Test game
+              </span>
+            ) : null}
             <span
               className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-label ${
-                connection === 'live'
-                  ? 'text-pump-400'
-                  : connection === 'down' || connection === 'unconfigured'
-                    ? 'text-red-400'
-                    : 'text-pump-100/50'
+                connection === 'live' ? 'text-pump-400' : 'text-pump-100/45'
               }`}
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
-                  connection === 'live'
-                    ? 'bg-pump-400'
-                    : connection === 'down' || connection === 'unconfigured'
-                      ? 'bg-red-400'
-                      : 'bg-pump-100/40 animate-pulse'
+                  connection === 'live' ? 'bg-pump-400' : 'animate-pulse bg-pump-100/40'
                 }`}
               />
-              {connection === 'live'
-                ? 'Live'
-                : connection === 'unconfigured'
-                  ? 'Not configured'
-                  : connection === 'down'
-                    ? 'Offline'
-                    : 'Syncing'}
+              {connection === 'live' ? 'Live' : 'Connecting'}
             </span>
           </div>
         </div>
@@ -205,21 +189,6 @@ export function GameRoom() {
       {/* The hall                                                           */}
       {/* ------------------------------------------------------------------ */}
       <main className="mx-auto max-w-6xl px-5 py-8">
-        {connection === 'unconfigured' || connection === 'down' ? (
-          <div className="mb-6 rounded-2xl border-2 border-pump-500/40 bg-forest-800/70 p-5">
-            <p className="eyebrow-on-dark mb-2">Hall not connected</p>
-            <p className="mb-3 text-[13.5px] leading-relaxed text-pump-100/70">
-              {connectionError ??
-                'The game server is not responding. The room will fill in as soon as it is reachable.'}
-            </p>
-            <p className="font-mono text-[10.5px] leading-relaxed text-pump-100/40">
-              Set <span className="text-pump-300">NEXT_PUBLIC_GAME_URL</span> in Vercel to your
-              Railway URL (https, no trailing slash), then redeploy. Check{' '}
-              <span className="text-pump-300">/health</span> on that URL returns ok first.
-            </p>
-          </div>
-        ) : null}
-
         <div className="grid gap-8 lg:grid-cols-[220px_1fr_320px]">
           {/* Caller */}
           <div className="order-2 lg:order-1">
@@ -230,7 +199,7 @@ export function GameRoom() {
           <div className="order-1 flex flex-col items-center lg:order-2">
             <CageScene
               spinKey={draws.length}
-              speed={phase === 'drawing' || phase === 'preroll' ? SPEEDS[speedIndex]!.value : 0.35}
+              speed={phase === 'drawing' || phase === 'preroll' ? 1 : 0.35}
               className="h-[260px] w-full sm:h-[320px]"
             />
 
@@ -243,14 +212,6 @@ export function GameRoom() {
               <span className="btn-primary pointer-events-none !py-2.5 opacity-90">
                 {statusLabel}
               </span>
-              <button
-                type="button"
-                onClick={() => setSpeedIndex((i) => (i + 1) % SPEEDS.length)}
-                className="btn-ghost !py-2.5"
-                title="How fast the cage spins on screen. The draw itself is set by the hall."
-              >
-                Spin: {SPEEDS[speedIndex]!.label}
-              </button>
               <button
                 type="button"
                 onClick={() => setShowBoard((v) => !v)}
@@ -354,9 +315,6 @@ export function GameRoom() {
                       Game in progress — you&rsquo;re seated automatically for the next one.
                     </p>
                   )}
-                  {joinError ? (
-                    <p className="mt-2 text-[12px] text-red-300">{joinError}</p>
-                  ) : null}
                 </div>
               </>
             ) : (
@@ -490,7 +448,8 @@ function WinnerOverlay({
         transition={{ type: 'spring', stiffness: 240, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="eyebrow mb-2">{won ? 'That&rsquo;s you' : 'House called'}</p>
+        {/* Plain string, not JSX text — an HTML entity here renders literally. */}
+        <p className="eyebrow mb-2">{won ? 'That’s you' : 'House called'}</p>
         <h2 className="mb-3 text-4xl font-extrabold tracking-tight text-pump-500">HOUSE!</h2>
 
         <ul className="mb-4 space-y-1.5">

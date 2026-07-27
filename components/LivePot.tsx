@@ -13,7 +13,7 @@ const PHASE_COPY = {
 
 /** Live strip: what the pot is doing right now, straight from the hall. */
 export function LivePot({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
-  const { state, connection, error } = useGame();
+  const { state, connection } = useGame();
   const now = useNow(500);
 
   const dark = tone === 'dark';
@@ -25,17 +25,8 @@ export function LivePot({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
     return (
       <div className={`rounded-2xl border ${border} px-5 py-4`}>
         <p className={`font-mono text-[10px] uppercase tracking-label ${label}`}>
-          {connection === 'unconfigured'
-            ? 'Hall not connected'
-            : connection === 'down'
-              ? 'Hall offline'
-              : 'Connecting to the hall…'}
+          Connecting to the hall…
         </p>
-        {connection === 'unconfigured' && error ? (
-          <p className={`mt-1.5 text-[12px] ${dark ? 'text-pump-100/50' : 'text-forest-700/60'}`}>
-            {error}
-          </p>
-        ) : null}
       </div>
     );
   }

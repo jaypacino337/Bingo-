@@ -19,6 +19,7 @@ import {
   updateRound,
   type RecentWinner,
 } from './db.js';
+import { PublicKey } from '@solana/web3.js';
 import { getHolderBalance, getTreasuryLamports, solToLamports } from './solana.js';
 import { payWinner } from './payout.js';
 
@@ -72,9 +73,21 @@ export interface GameState {
   /** Only populated once the round has settled, so draws can be verified. */
   serverSeed: string | null;
   recentWinners: RecentWinner[];
+  /** True when balances are simulated — the UI shows a TEST GAME banner. */
+  demoMode: boolean;
 }
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
+
+/**
+ * Stable, realistic-looking addresses for the simulated entrants used in a
+ * test game. Derived from the index so the same crowd — and the same cards —
+ * comes back every round instead of a fresh set of strangers each time.
+ */
+function demoWallet(index: number): string {
+  const digest = createHash('sha256').update(`bingo-demo-player:${index}`).digest();
+  return new PublicKey(new Uint8Array(digest)).toBase58();
+}
 
 /** Deterministic 1-in-N jackpot roll, verifiable from the revealed seed. */
 function jackpotRoll(serverSeed: string, wallet: string, cardIndex: number, odds: number): number {
@@ -143,8 +156,19 @@ export class BingoEngine extends EventEmitter {
         `(prize ${split.prize}, jackpot +${split.jackpot})`,
     );
 
+    await this.seatDemoPlayers();
+
     this.broadcast('phase');
     this.schedule(config.lobbyMs, () => void this.startPreRoll());
+  }
+
+  /** Test mode only — fills the floor so a round can be watched end to end. */
+  private async seatDemoPlayers(): Promise<void> {
+    if (config.demoPlayers <= 0 || !config.devFakeHolders) return;
+    for (let i = 0; i < config.demoPlayers; i++) {
+      await this.join(demoWallet(i));
+    }
+    console.log(`[engine] seated ${config.demoPlayers} simulated entrants (test game)`);
   }
 
   /**
@@ -445,6 +469,7 @@ export class BingoEngine extends EventEmitter {
       serverSeedHash: this.serverSeedHash,
       serverSeed: this.seedRevealed ? this.serverSeed : null,
       recentWinners: this.recent,
+      demoMode: config.devFakeHolders,
     };
   }
 

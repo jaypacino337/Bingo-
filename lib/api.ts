@@ -110,6 +110,7 @@ export interface GameState {
   serverSeedHash: string;
   serverSeed: string | null;
   recentWinners: RecentWinner[];
+  demoMode: boolean;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
