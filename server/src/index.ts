@@ -55,6 +55,25 @@ setInterval(() => {
 // Routes
 // ---------------------------------------------------------------------------
 
+/**
+ * Identifies the service at the bare domain. Without this, hitting the root of
+ * a misconfigured deploy gives an anonymous 404 and there is no way to tell
+ * "wrong app deployed here" from "nothing deployed here".
+ */
+app.get('/', (_req, res) => {
+  const state = engine.getState();
+  res.json({
+    service: 'bingo-fun-game-server',
+    ok: true,
+    message: 'This is the game server. The website is deployed separately on Vercel.',
+    phase: state.phase,
+    players: state.playersCount,
+    cards: state.cardsCount,
+    supabase: dbEnabled,
+    endpoints: ['/health', '/api/config', '/api/state', '/api/holder/:wallet', '/api/join', '/ws'],
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
