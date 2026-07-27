@@ -69,11 +69,19 @@ export const config = {
   tokensPerCard: num('TOKENS_PER_CARD', 1_000_000),
   /** Minimum whole tokens a wallet must hold to enter at all. */
   minTokensToPlay: num('MIN_TOKENS_TO_PLAY', 1_000_000),
+  /** Total token supply. pump.fun mints 1,000,000,000 by default. */
+  tokenSupply: num('TOKEN_SUPPLY', 1_000_000_000),
   /**
-   * Hard cap so a whale doesn't blow up the round. 0 = uncapped.
-   * Matches the top tier shown in the entries table on the site.
+   * Max share of supply any one wallet is allowed to hold, as a percent.
+   * The card cap is derived from this so a whale cannot dominate a round.
    */
-  maxCardsPerWallet: num('MAX_CARDS_PER_WALLET', 100),
+  maxWalletPercent: num('MAX_WALLET_PERCENT', 5),
+  /**
+   * Explicit card cap. Leave at 0 to derive it from MAX_WALLET_PERCENT —
+   * 5% of a 1B supply is 50,000,000 tokens, which at 1M per card is 50 cards.
+   * Set a number here to override. -1 means genuinely uncapped.
+   */
+  maxCardsOverride: num('MAX_CARDS_PER_WALLET', 0),
 
   // --- solana -------------------------------------------------------------
   rpcUrl: str('SOLANA_RPC_URL', 'https://api.mainnet-beta.solana.com'),
@@ -154,6 +162,17 @@ if (config.potSource === 'creator_fees' && !config.treasuryWallet) {
   throw new Error('POT_SOURCE=creator_fees requires TREASURY_WALLET to be set');
 }
 
+/**
+ * The most cards one wallet can play. Derived from the max-wallet rule unless
+ * explicitly overridden. 0 means "no cap" internally.
+ */
+export const maxCardsPerWallet: number = (() => {
+  if (config.maxCardsOverride === -1) return 0; // uncapped, on purpose
+  if (config.maxCardsOverride > 0) return config.maxCardsOverride;
+  const maxTokens = config.tokenSupply * (config.maxWalletPercent / 100);
+  return Math.max(1, Math.floor(maxTokens / config.tokensPerCard));
+})();
+
 /** Split a pot into the winner's prize and the jackpot contribution. */
 export function splitPot(lamports: number): { prize: number; jackpot: number } {
   const prize = Math.round(lamports * config.prizeShare);
@@ -168,7 +187,8 @@ export function publicConfig() {
     tokenName: config.tokenName,
     tokensPerCard: config.tokensPerCard,
     minTokensToPlay: config.minTokensToPlay,
-    maxCardsPerWallet: config.maxCardsPerWallet,
+    maxCardsPerWallet,
+    maxWalletPercent: config.maxWalletPercent,
     winPattern: config.winPattern,
     ballIntervalMs: config.ballIntervalMs,
     lobbyMs: config.lobbyMs,

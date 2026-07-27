@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BingoCard } from './BingoCard';
@@ -23,8 +22,21 @@ const SPEEDS = [
   { label: 'Rowdy', value: 1.8 },
 ] as const;
 
+/**
+ * Reads ?w= straight off the URL rather than via useSearchParams, so this
+ * component has no dependency on Next's routing internals — it is mounted
+ * client-only and needs to work without a Suspense boundary.
+ */
+function useWalletParam(): string | null {
+  const [wallet, setWallet] = useState<string | null>(null);
+  useEffect(() => {
+    setWallet(new URLSearchParams(window.location.search).get('w'));
+  }, []);
+  return wallet;
+}
+
 export function GameRoom() {
-  const params = useSearchParams();
+  const urlWallet = useWalletParam();
   const { state, connection, error: connectionError } = useGame();
   const now = useNow(250);
   const [storedWallet, setStoredWallet] = useStoredWallet();
@@ -38,12 +50,11 @@ export function GameRoom() {
   const [dismissedRound, setDismissedRound] = useState<number | null>(null);
 
   // ?w= wins over whatever is in storage, so shared links work.
-  const wallet = params.get('w') ?? storedWallet;
+  const wallet = urlWallet ?? storedWallet;
 
   useEffect(() => {
-    const fromUrl = params.get('w');
-    if (fromUrl && fromUrl !== storedWallet) setStoredWallet(fromUrl);
-  }, [params, storedWallet, setStoredWallet]);
+    if (urlWallet && urlWallet !== storedWallet) setStoredWallet(urlWallet);
+  }, [urlWallet, storedWallet, setStoredWallet]);
 
   // Load holdings for whoever is at the table.
   useEffect(() => {

@@ -26,8 +26,14 @@ export function solscanUrl(address: string): string {
   return `https://solscan.io/account/${address}`;
 }
 
+/**
+ * Most cards one wallet can play. Mirrors the server's cap, which is derived
+ * from the max-wallet rule: 5% of a 1,000,000,000 supply is 50,000,000 tokens,
+ * and at 1,000,000 per card that is 50 cards.
+ */
+export const maxCards = Number(process.env.NEXT_PUBLIC_MAX_CARDS ?? 50);
+
 /** Entry tiers for the "your bag is your book of cards" table. */
-export const ENTRY_TIERS = [1, 5, 10, 50, 100].map((cards) => ({
-  held: cards * site.tokensPerCard,
-  cards,
-}));
+export const ENTRY_TIERS = [1, 5, 10, 25, maxCards]
+  .filter((cards, i, all) => cards <= maxCards && all.indexOf(cards) === i)
+  .map((cards) => ({ held: cards * site.tokensPerCard, cards }));

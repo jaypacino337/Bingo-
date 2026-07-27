@@ -7,7 +7,7 @@ import { WalletSearch } from '@/components/WalletSearch';
 import { LivePot } from '@/components/LivePot';
 import { generateCard } from '@/lib/bingo';
 import { fullTokens } from '@/lib/format';
-import { buyUrl, site, ENTRY_TIERS } from '@/lib/site';
+import { buyUrl, site, maxCards, ENTRY_TIERS } from '@/lib/site';
 
 // A fixed showcase card for the hero — deterministic, so it never flickers
 // between server and client render.
@@ -207,7 +207,8 @@ export default function HomePage() {
                 </p>
                 <p className="mb-5 text-[14px] leading-relaxed text-forest-900/70">
                   Sell before the snapshot and you&rsquo;re playing fewer cards. Hold through it and
-                  every game is another free go at the pot.
+                  every game is another free go at the pot. Cards are capped at {maxCards} per
+                  wallet, in line with the 5% max holding — nobody buys the room.
                 </p>
                 <div className="rounded-xl border-2 border-pump-500/30 bg-mint-100 p-4">
                   <p className="text-[13.5px] leading-relaxed text-forest-700">

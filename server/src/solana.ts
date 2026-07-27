@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { config, LAMPORTS_PER_SOL } from './config.js';
+import { config, LAMPORTS_PER_SOL, maxCardsPerWallet } from './config.js';
 
 export const connection = new Connection(config.rpcUrl, 'confirmed');
 
@@ -37,7 +37,8 @@ function cardsFor(amount: number): { cards: number; eligible: boolean; toNextCar
   }
   let cards = Math.floor(amount / config.tokensPerCard);
   if (cards < 1) cards = 1; // met the minimum but the per-card threshold is higher
-  if (config.maxCardsPerWallet > 0) cards = Math.min(cards, config.maxCardsPerWallet);
+  // Capped by the max-wallet rule, so no single holder can dominate a round.
+  if (maxCardsPerWallet > 0) cards = Math.min(cards, maxCardsPerWallet);
 
   const nextThreshold = (Math.floor(amount / config.tokensPerCard) + 1) * config.tokensPerCard;
   return { cards, eligible: true, toNextCard: Math.max(0, nextThreshold - amount) };

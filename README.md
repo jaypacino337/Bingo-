@@ -228,7 +228,8 @@ and [`.env.example`](.env.example). The knobs you are most likely to touch:
 | --- | --- | --- |
 | `TOKENS_PER_CARD` | `1000000` | tokens per card |
 | `MIN_TOKENS_TO_PLAY` | `1000000` | floor to enter |
-| `MAX_CARDS_PER_WALLET` | `100` | whale cap (`0` = uncapped) |
+| `MAX_WALLET_PERCENT` | `5` | max holding, sets the card cap (50 at 1B supply) |
+| `MAX_CARDS_PER_WALLET` | `0` | override the derived cap (`-1` = uncapped) |
 | `WIN_PATTERN` | `full` | `full` \| `line` \| `x` |
 | `BALL_INTERVAL_MS` | `2600` | seconds between calls |
 | `LOBBY_MS` | `30000` | join window |

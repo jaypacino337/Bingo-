@@ -7,6 +7,10 @@ import { engine } from './engine.js';
 import { getHolderBalance, isValidWallet } from './solana.js';
 import { dbEnabled, leaderboard, recentWinners } from './db.js';
 import { payoutEnabled } from './payout.js';
+import { preflight } from './preflight.js';
+
+// Refuse to start on bad config rather than failing at the first player.
+preflight();
 
 const app = express();
 app.set('trust proxy', 1);
@@ -89,7 +93,11 @@ app.get('/api/holder/:wallet', rateLimit, async (req, res) => {
     });
   } catch (err) {
     console.error('[api] holder lookup failed:', err);
-    res.status(502).json({ error: 'Could not reach the chain. Try again in a moment.' });
+    const detail = err instanceof Error ? err.message : String(err);
+    res.status(502).json({
+      error: 'Could not read that wallet from the chain. The RPC may be rate limited or down.',
+      detail,
+    });
   }
 });
 
