@@ -111,6 +111,14 @@ jackpot balance reset on every restart.
 
 ### 3. Vercel (website)
 
+> **Root Directory must be EMPTY on Vercel.** It is the opposite of Railway,
+> and getting them backwards is the single easiest way to break this deploy:
+>
+> | Platform | Root Directory |
+> | --- | --- |
+> | Railway | `server` |
+> | Vercel | *(leave blank — repo root)* |
+
 1. **Add New → Project →** import this repo.
 2. Leave every build setting alone. Next.js is at the repo root, so Vercel
    detects it with no configuration.
@@ -250,6 +258,38 @@ socket cannot be established, so a cold container or a hostile network degrades
 gracefully instead of showing a blank room.
 
 ---
+
+## Troubleshooting the deploy
+
+**"Deployment not found" / "no production deployment to redeploy" (Vercel)**
+
+Vercel's *Production Branch* is set to a branch it has never built, so the
+production domain has nothing attached to it. Fix:
+
+1. **Settings → Git → Production Branch** — set it to the branch you actually
+   push to, then **Save**.
+2. Push any commit to that branch. The first build against it becomes the
+   production deployment and the domain starts working.
+
+The root cause is usually that the repo's default branch at import time was not
+the branch you kept working on. Setting the GitHub default branch (**Settings →
+General → Default branch**) to `main` before importing avoids it entirely.
+
+**Build fails immediately on Vercel with "next: not found" or similar**
+
+Root Directory is pointing at `server`. Clear it — see the table above.
+
+**Repo shows "no commits found" / pull requests cannot be created**
+
+The repo has only one branch, so there is no base to merge into and no `main`
+to display. Create `main` and set it as the default branch.
+
+**The hall says "Connecting to the hall…" forever**
+
+`NEXT_PUBLIC_GAME_URL` is missing, wrong, or the Railway service is down. Check
+`https://<your-railway-url>/health` returns `{"ok":true,...}`, and that the
+value in Vercel has **no trailing slash**. Also confirm `CORS_ORIGINS` on
+Railway includes your Vercel domain.
 
 ## Notes and limits
 
