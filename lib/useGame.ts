@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchState, wsUrl, type GameState } from './api';
+import { fetchState, gameUrlProblem, wsUrl, type GameState } from './api';
 
-export type Connection = 'connecting' | 'live' | 'polling' | 'down';
+export type Connection = 'connecting' | 'live' | 'polling' | 'down' | 'unconfigured';
 
 interface Message {
   type: string;
@@ -111,6 +111,14 @@ export function useGame(): {
   }, [startPolling, stopPolling]);
 
   useEffect(() => {
+    // Bail out loudly rather than hammering a URL that cannot work.
+    const problem = gameUrlProblem();
+    if (problem) {
+      setConnection('unconfigured');
+      setError(problem);
+      return;
+    }
+
     closedRef.current = false;
     refresh();
     connect();

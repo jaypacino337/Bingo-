@@ -25,7 +25,7 @@ const SPEEDS = [
 
 export function GameRoom() {
   const params = useSearchParams();
-  const { state, connection } = useGame();
+  const { state, connection, error: connectionError } = useGame();
   const now = useNow(250);
   const [storedWallet, setStoredWallet] = useStoredWallet();
 
@@ -164,7 +164,7 @@ export function GameRoom() {
               className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-label ${
                 connection === 'live'
                   ? 'text-pump-400'
-                  : connection === 'down'
+                  : connection === 'down' || connection === 'unconfigured'
                     ? 'text-red-400'
                     : 'text-pump-100/50'
               }`}
@@ -173,12 +173,18 @@ export function GameRoom() {
                 className={`h-1.5 w-1.5 rounded-full ${
                   connection === 'live'
                     ? 'bg-pump-400'
-                    : connection === 'down'
+                    : connection === 'down' || connection === 'unconfigured'
                       ? 'bg-red-400'
                       : 'bg-pump-100/40 animate-pulse'
                 }`}
               />
-              {connection === 'live' ? 'Live' : connection === 'down' ? 'Offline' : 'Syncing'}
+              {connection === 'live'
+                ? 'Live'
+                : connection === 'unconfigured'
+                  ? 'Not configured'
+                  : connection === 'down'
+                    ? 'Offline'
+                    : 'Syncing'}
             </span>
           </div>
         </div>
@@ -188,6 +194,21 @@ export function GameRoom() {
       {/* The hall                                                           */}
       {/* ------------------------------------------------------------------ */}
       <main className="mx-auto max-w-6xl px-5 py-8">
+        {connection === 'unconfigured' || connection === 'down' ? (
+          <div className="mb-6 rounded-2xl border-2 border-pump-500/40 bg-forest-800/70 p-5">
+            <p className="eyebrow-on-dark mb-2">Hall not connected</p>
+            <p className="mb-3 text-[13.5px] leading-relaxed text-pump-100/70">
+              {connectionError ??
+                'The game server is not responding. The room will fill in as soon as it is reachable.'}
+            </p>
+            <p className="font-mono text-[10.5px] leading-relaxed text-pump-100/40">
+              Set <span className="text-pump-300">NEXT_PUBLIC_GAME_URL</span> in Vercel to your
+              Railway URL (https, no trailing slash), then redeploy. Check{' '}
+              <span className="text-pump-300">/health</span> on that URL returns ok first.
+            </p>
+          </div>
+        ) : null}
+
         <div className="grid gap-8 lg:grid-cols-[220px_1fr_320px]">
           {/* Caller */}
           <div className="order-2 lg:order-1">

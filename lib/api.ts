@@ -5,10 +5,34 @@
  *   https://bingo-server-production.up.railway.app
  */
 
-export const GAME_URL = (process.env.NEXT_PUBLIC_GAME_URL ?? 'http://localhost:8080').replace(
-  /\/$/,
-  '',
-);
+const RAW_GAME_URL = process.env.NEXT_PUBLIC_GAME_URL ?? '';
+
+export const GAME_URL = (RAW_GAME_URL || 'http://localhost:8080').replace(/\/$/, '');
+
+/**
+ * Whether the game server has actually been pointed at.
+ *
+ * Without this the app would silently fall back to localhost, and on an HTTPS
+ * deployment the browser blocks that as mixed content — every request fails
+ * with a security error that looks like a bug rather than missing config. We
+ * check up front so the hall can say what's actually wrong.
+ */
+export const GAME_CONFIGURED = RAW_GAME_URL.length > 0;
+
+/** Set when the config is present but cannot work from a browser. */
+export function gameUrlProblem(): string | null {
+  if (!GAME_CONFIGURED) {
+    return 'NEXT_PUBLIC_GAME_URL is not set, so there is no game server to connect to.';
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.protocol === 'https:' &&
+    GAME_URL.startsWith('http://')
+  ) {
+    return 'NEXT_PUBLIC_GAME_URL uses http:// but this site is served over https://. Browsers block that. Use the https:// Railway URL.';
+  }
+  return null;
+}
 
 /** ws:// or wss:// depending on how the game server is served. */
 export function wsUrl(): string {
