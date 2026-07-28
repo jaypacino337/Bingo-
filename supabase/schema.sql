@@ -1,5 +1,5 @@
 -- ============================================================================
--- ONCHAIN BINGO — Supabase schema
+-- BINGO.FUN — DUEL ROYALE — Supabase schema
 -- Paste this whole file into the Supabase SQL Editor and hit RUN.
 -- Safe to re-run (everything is IF NOT EXISTS / CREATE OR REPLACE).
 -- ============================================================================
@@ -14,10 +14,10 @@ create extension if not exists "pgcrypto";
 create table if not exists public.rounds (
   id                bigserial primary key,
   status            text        not null default 'lobby',   -- lobby | drawing | settled
-  pattern           text        not null default 'line',    -- line | x | full
+  pattern           text        not null default 'duel-royale',  -- game mode
   server_seed       text,                                   -- revealed at settle
   server_seed_hash  text        not null,                   -- published at lobby open
-  draws             smallint[]  not null default '{}',
+  draws             smallint[]  not null default '{}',  -- unused by duel royale
   pot_lamports      bigint      not null default 0,
   prize_lamports    bigint      not null default 0,         -- 80% of pot
   jackpot_add_lamports bigint   not null default 0,         -- 20% of pot
@@ -56,9 +56,9 @@ create table if not exists public.winners (
   id                bigserial primary key,
   round_id          bigint      not null references public.rounds (id) on delete cascade,
   wallet            text        not null,
-  card_index        integer     not null,
-  ball_number       smallint,                       -- ball that completed the pattern
-  balls_called      integer     not null default 0,
+  card_index        integer     not null,       -- winning fighter's entry index
+  ball_number       smallint,                     -- unused by duel royale
+  balls_called      integer     not null default 0,  -- fighters in the round
   prize_lamports    bigint      not null default 0,
   jackpot_won       boolean     not null default false,
   jackpot_roll      integer,                        -- 0..(odds-1); 0 == win

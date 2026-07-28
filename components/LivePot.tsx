@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useGame, useNow } from '@/lib/useGame';
 import { countdown, sol } from '@/lib/format';
 
-const PHASE_COPY = {
+const PHASE_COPY: Record<string, string> = {
   lobby: 'Filling now',
-  preroll: 'Eyes down',
-  drawing: 'Cage spinning',
-  celebration: 'House!',
-} as const;
+  intro: 'Entering',
+  culling: 'Culling',
+  duels: 'Duels',
+  champion: 'Champion',
+};
 
 /** Live strip: what the pot is doing right now, straight from the hall. */
 export function LivePot({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
@@ -36,10 +37,13 @@ export function LivePot({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
   const stats = [
     { label: 'This game', value: `${sol(state.prizeLamports)} SOL` },
     { label: 'Jackpot', value: `${sol(state.jackpotLamports)} SOL` },
-    { label: 'Cards in play', value: String(state.cardsCount) },
+    { label: 'Fighters', value: String(state.fightersCount) },
     {
-      label: PHASE_COPY[state.phase],
-      value: state.phase === 'lobby' ? countdown(remaining) : `${state.ballsCalled} called`,
+      label: PHASE_COPY[state.phase] ?? 'Live',
+      value:
+        state.phase === 'lobby'
+          ? countdown(remaining)
+          : `${state.aliveCount} standing`,
     },
   ];
 

@@ -1,3 +1,5 @@
+import type { Duel, Fighter } from './royale';
+
 /**
  * Talks to the Railway game server.
  *
@@ -56,27 +58,18 @@ export interface GameConfig {
   tokensPerCard: number;
   minTokensToPlay: number;
   maxCardsPerWallet: number;
-  winPattern: 'line' | 'x' | 'full';
-  ballIntervalMs: number;
+  maxWalletPercent: number;
   lobbyMs: number;
+  waveMs: number;
+  duelMs: number;
   jackpotOdds: number;
   prizeShare: number;
   jackpotShare: number;
   potSource: string;
   treasuryWallet: string | null;
+  demoMode: boolean;
 }
 
-export interface Winner {
-  wallet: string;
-  cardIndex: number;
-  ballNumber: number | null;
-  ballsCalled: number;
-  prizeLamports: number;
-  jackpotWon: boolean;
-  jackpotRoll: number;
-  jackpotLamports: number;
-  line: [number, number][];
-}
 
 export interface RecentWinner {
   wallet: string;
@@ -87,26 +80,39 @@ export interface RecentWinner {
   createdAt: string;
 }
 
-export type Phase = 'lobby' | 'preroll' | 'drawing' | 'celebration';
+export type Phase = 'lobby' | 'intro' | 'culling' | 'duels' | 'champion';
 
 export interface GameState {
   roundId: number | null;
   phase: Phase;
-  pattern: 'line' | 'x' | 'full';
   phaseEndsAt: number;
-  draws: number[];
-  lastBall: number | null;
-  lastLetter: string | null;
-  ballsCalled: number;
+
+  players: { wallet: string; entries: number }[];
+  playersCount: number;
+  fightersCount: number;
+
+  eliminated: string[];
+  aliveCount: number;
+  lastWave: string[];
+  waveIndex: number;
+  waveCount: number;
+
+  finalists: Fighter[];
+  currentDuel: (Duel & { index: number }) | null;
+  resolvedDuels: Duel[];
+  duelCount: number;
+
+  champion: Fighter | null;
+  championPrize: number;
+  jackpotWon: boolean;
+  jackpotRoll: number;
+  jackpotPrize: number;
+
   potLamports: number;
   prizeLamports: number;
   jackpotLamports: number;
   jackpotOdds: number;
-  players: { wallet: string; cards: number }[];
-  playersCount: number;
-  cardsCount: number;
-  hotCards: { wallet: string; cardIndex: number; remaining: number }[];
-  winners: Winner[];
+
   serverSeedHash: string;
   serverSeed: string | null;
   recentWinners: RecentWinner[];
@@ -136,6 +142,6 @@ export function fetchState(): Promise<GameState> {
   return request<GameState>('/api/state');
 }
 
-export function joinGame(wallet: string): Promise<{ ok: true; cards: number; tokenAmount: number }> {
+export function joinGame(wallet: string): Promise<{ ok: true; entries: number; tokenAmount: number }> {
   return request('/api/join', { method: 'POST', body: JSON.stringify({ wallet }) });
 }

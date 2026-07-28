@@ -21,20 +21,20 @@ const SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL ?? 'BINGO';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bingo.fun'),
   title: {
-    default: 'Bingo.fun — Eyes down. Fees up.',
+    default: 'Bingo.fun — Everyone fights. One walks out.',
     template: '%s · Bingo.fun',
   },
-  description: `The classic hall game, rebuilt on Solana. Hold $${SYMBOL} to get your cards — every 1,000,000 tokens is one entry. Numbers get drawn, someone shouts house, and the winner takes every creator fee earned that game.`,
-  keywords: ['bingo', 'solana', 'pump.fun', 'onchain bingo', SYMBOL],
+  description: `A duel royale on Solana. Hold $${SYMBOL} and your wallet fields fighters — one for every 1,000,000 tokens. Waves cut the arena to eight, the last eight duel head to head, and the survivor takes every creator fee earned that round.`,
+  keywords: ['duel royale', 'solana', 'pump.fun', 'onchain game', 'battle royale', SYMBOL],
   openGraph: {
-    title: 'Bingo.fun — Eyes down. Fees up.',
-    description: `Old school bingo, on-chain. 1,000,000 $${SYMBOL} = 1 card. Winner takes the creator fees.`,
+    title: 'Bingo.fun — Everyone fights. One walks out.',
+    description: `Duel royale, on-chain. 1,000,000 $${SYMBOL} = 1 fighter. Last one standing takes the creator fees.`,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bingo.fun — Eyes down. Fees up.',
-    description: `Old school bingo, on-chain. 1,000,000 $${SYMBOL} = 1 card.`,
+    title: 'Bingo.fun — Everyone fights. One walks out.',
+    description: `Duel royale, on-chain. 1,000,000 $${SYMBOL} = 1 fighter.`,
   },
 };
 

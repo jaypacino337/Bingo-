@@ -68,7 +68,7 @@ app.get('/', (_req, res) => {
     message: 'This is the game server. The website is deployed separately on Vercel.',
     phase: state.phase,
     players: state.playersCount,
-    cards: state.cardsCount,
+    fighters: state.fightersCount,
     supabase: dbEnabled,
     endpoints: ['/health', '/api/config', '/api/state', '/api/holder/:wallet', '/api/join', '/ws'],
   });
@@ -133,7 +133,7 @@ app.post('/api/join', rateLimit, async (req, res) => {
       res.status(409).json({ error: result.reason, code: result.code });
       return;
     }
-    res.json({ ok: true, cards: result.cards, tokenAmount: result.tokenAmount });
+    res.json({ ok: true, entries: result.entries, tokenAmount: result.tokenAmount });
   } catch (err) {
     console.error('[api] join failed:', err);
     res.status(502).json({ error: 'Could not verify your holdings. Try again in a moment.' });
@@ -223,8 +223,8 @@ server.listen(config.port, () => {
   console.log(`[server] listening on :${config.port}`);
   console.log(`[server] mint ${config.tokenMint}`);
   console.log(
-    `[server] ${config.tokensPerCard.toLocaleString()} $${config.tokenSymbol} = 1 card · ` +
-      `pattern ${config.winPattern} · jackpot 1-in-${config.jackpotOdds}`,
+    `[server] ${config.tokensPerCard.toLocaleString()} $${config.tokenSymbol} = 1 entry · ` +
+      `duel royale · jackpot 1-in-${config.jackpotOdds}`,
   );
   void engine.start();
 });

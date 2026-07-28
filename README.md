@@ -1,9 +1,13 @@
-# Bingo.fun — Eyes down. Fees up.
+# Bingo.fun — Everyone fights. One walks out.
 
-Real 75-ball bingo, run live on-chain. Hold the token, get your cards, watch
-the cage spin. The pot is funded by pump.fun creator fees and split **80% to
-the game winner / 20% into a progressive jackpot** — and every winner then
-rolls a **1-in-25** shot at that jackpot.
+A **duel royale**, run live on-chain. Hold the token and your wallet fields
+fighters. Waves of elimination cut the arena down to eight, the last eight go
+head to head, and the survivor takes the pot. Funded by pump.fun creator fees
+and split **80% to the champion / 20% into a progressive jackpot** — and every
+champion then rolls a **1-in-25** shot at that jackpot.
+
+A round lasts about 30 seconds whether 8 fighters enter or 1,000: the culling
+halves the field each wave, so the number of steps grows logarithmically.
 
 ```
 ┌──────────────┐        ┌───────────────────┐        ┌──────────────┐
@@ -29,39 +33,43 @@ rolls a **1-in-25** shot at that jackpot.
 
 ## How the game works
 
-- **1,000,000 tokens = 1 card.** A wallet's balance is read at join time;
-  every whole 1M grants another card, up to `MAX_CARDS_PER_WALLET`.
-- **Cards are deterministic.** A card is derived from `(wallet, cardIndex)`, so
-  the same wallet always sees the same cards and the browser can regenerate
-  them locally instead of trusting the server. `lib/bingo.ts` and
-  `server/src/bingo.ts` are byte-for-byte identical — **if you edit one, copy
-  it across** (`cp server/src/bingo.ts lib/bingo.ts`).
-- **Real 75-ball.** B 1-15, I 16-30, N 31-45, G 46-60, O 61-75, free centre.
-  Default win condition is a **full house** (blackout), matching the site copy.
-  At the default 2.6s pace a full house lands around 65-70 balls — roughly a
-  3 minute game.
-- **Provably fair draws.** Each round generates a secret `serverSeed` and
-  publishes its SHA-256 hash when the lobby opens. The seed is revealed on
-  settlement, and the whole draw order can be recomputed from it:
+- **1,000,000 tokens = 1 fighter.** A wallet's balance is read when it enters;
+  every whole 1M puts another fighter in the arena, capped by the max-wallet
+  rule (5% of supply = 50 fighters by default).
+- **Every fighter is equal.** Ten fighters is ten shots at winning, not a
+  better shot. A wallet with one fighter can take down a whale in the final.
+  Win probability is exactly proportional to entries — verified by simulation.
+- **Provably fair.** Each round generates a secret `serverSeed` and publishes
+  its SHA-256 hash when the lobby opens. The seed is revealed on settlement,
+  and the entire round — every elimination and every duel — can be recomputed
+  from it:
 
   ```js
-  import { drawOrder } from './lib/bingo';
-  drawOrder(revealedSeed); // === the draws recorded for that round
+  import { resolveRoyale } from './lib/royale';
+  resolveRoyale(revealedSeed, fighters); // === exactly what played out
   ```
 
-  The jackpot roll is derived the same way, from
-  `sha256("jackpot:" + seed + ":" + wallet + ":" + cardIndex) % 25`.
+  Nothing is decided while the round is running. The seed shuffles the fighters
+  into a secret ranking; waves cut from the bottom of it and duels are resolved
+  by "better rank wins", so there is no moment where the server could nudge the
+  outcome. The jackpot roll is derived the same way, from
+  `sha256("jackpot:" + seed + ":" + wallet + ":" + entry) % 25`.
+
+  `lib/royale.ts` and `server/src/royale.ts` are byte-for-byte identical —
+  **if you edit one, copy it across** (`cp server/src/royale.ts lib/royale.ts`).
 
 ### Round loop
 
 ```
-lobby (30s, join window)  →  eyes down (3s)  →  drawing (a ball every 2.6s)
-      ↑                                                      │
-      └──────────  celebration (15s)  ←  first full house ────┘
+lobby (30s, join window)  →  fighters enter (3s)  →  culling waves (1.8s each)
+      ↑                                                        │
+      │                                                        ▼
+      └────  champion (12s)  ←  duels (3.5s each)  ←  final eight
 ```
 
-An empty lobby just recycles — no pot is burned and nothing is written to the
-database.
+Each wave halves the field until eight remain, then the bracket runs
+quarter-finals → semis → final. A lobby with fewer than two players recycles —
+no pot is burned and nothing is written to the database.
 
 ---
 
@@ -99,7 +107,7 @@ jackpot balance reset on every restart.
    | `TREASURY_WALLET` | wallet you claim creator fees into |
    | `SOLANA_RPC_URL` | a real RPC — Helius, QuickNode, Triton |
    | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | from step 1 |
-   | `TOKENS_PER_CARD` | `1000000` |
+   | `TOKENS_PER_CARD` | `1000000` (tokens per fighter) |
    | `MIN_TOKENS_TO_PLAY` | `1000000` |
 
 4. **Settings → Networking → Generate Domain.** Copy that URL — Vercel needs it.
@@ -230,8 +238,9 @@ and [`.env.example`](.env.example). The knobs you are most likely to touch:
 | `MIN_TOKENS_TO_PLAY` | `1000000` | floor to enter |
 | `MAX_WALLET_PERCENT` | `5` | max holding, sets the card cap (50 at 1B supply) |
 | `MAX_CARDS_PER_WALLET` | `0` | override the derived cap (`-1` = uncapped) |
-| `WIN_PATTERN` | `full` | `full` \| `line` \| `x` |
-| `BALL_INTERVAL_MS` | `2600` | seconds between calls |
+| `WAVE_MS` | `1800` | pause between culling waves |
+| `DUEL_MS` | `3500` | time on screen per duel |
+| `INTRO_MS` | `4000` | "fighters entering" beat |
 | `LOBBY_MS` | `30000` | join window |
 | `PRIZE_SHARE` / `JACKPOT_SHARE` | `0.8` / `0.2` | pot split (must sum to 1) |
 | `JACKPOT_ODDS` | `25` | 1-in-N jackpot roll |
@@ -285,7 +294,7 @@ Root Directory is pointing at `server`. Clear it — see the table above.
 The repo has only one branch, so there is no base to merge into and no `main`
 to display. Create `main` and set it as the default branch.
 
-**The hall says "Connecting to the hall…" forever**
+**The arena says "Connecting…" forever**
 
 `NEXT_PUBLIC_GAME_URL` is missing, wrong, or the Railway service is down. Check
 `https://<your-railway-url>/health` returns `{"ok":true,...}`, and that the
@@ -299,8 +308,9 @@ Railway includes your Vercel domain.
   not control. That is harmless while payouts go to the wallet address itself
   (the rightful owner receives the funds either way), but add wallet-signature
   auth before you attach anything that isn't a payout to the same address.
-- **The balance snapshot is taken at join, not at draw.** Someone can join and
-  then sell; they keep the cards for that round.
-- **The card wall renders at most 400 cards.** Beyond that it shows a count of
-  what isn't drawn, rather than locking up the tab.
+- **The balance snapshot is taken at join, not at settle.** Someone can enter
+  and then sell; they keep their fighters for that round.
+- **The arena renders at most 600 fighter tiles.** Beyond that it shows a count
+  of what isn't drawn, rather than locking up the tab. Your own fighters are
+  always drawn first, so you can find yourself in any size of crowd.
 - Round history and the jackpot only persist with Supabase configured.

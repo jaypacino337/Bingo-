@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { callFor } from '@/lib/calls';
-import { letterFor } from '@/lib/bingo';
 import { site } from '@/lib/site';
 
 /** Shown until public/host.png is dropped in — see README. */
@@ -18,30 +16,27 @@ function CallerPlaceholder() {
 }
 
 /**
- * The caller: the ball that just dropped, its old-hall nickname, and the face
- * calling it. Mirrors the panel down the left of the hall screenshot.
+ * The referee: the current readout and the face running the arena.
  */
-export function CallerPanel({ ball }: { ball: number | null }) {
+export function CallerPanel({ headline, value }: { headline: string; value: string }) {
   const [avatarOk, setAvatarOk] = useState(true);
 
-  // Re-trigger the pop animation on each new ball.
+  // Re-trigger the pop animation whenever the readout changes.
   const [key, setKey] = useState(0);
   useEffect(() => {
     setKey((k) => k + 1);
-  }, [ball]);
+  }, [value]);
 
   return (
     <div className="flex flex-col items-center gap-4 lg:items-start">
       {/* The call */}
       <div className="w-full max-w-[230px] rounded-2xl border-2 border-forest-900 bg-white px-5 py-4 text-center shadow-card">
-        <p className="mb-1 truncate text-[12px] italic text-forest-900/55">
-          {ball === null ? 'Eyes down…' : `${callFor(ball)}…`}
-        </p>
+        <p className="mb-1 truncate text-[12px] italic text-forest-900/55">{headline}</p>
         <p
           key={key}
-          className="animate-ball-in text-[34px] font-extrabold leading-none tracking-tight text-pump-500 tabular-nums"
+          className="animate-ball-in truncate text-[30px] font-extrabold leading-none tracking-tight text-pump-500 tabular-nums"
         >
-          {ball === null ? '—' : `${letterFor(ball)}·${ball}`}
+          {value}
         </p>
       </div>
 
@@ -69,7 +64,7 @@ export function CallerPanel({ ball }: { ball: number | null }) {
 
       <div className="text-center lg:text-left">
         <span className="inline-block rounded-lg border-2 border-forest-900 bg-pump-300 px-3 py-1.5 text-[12px] font-bold text-forest-900">
-          {site.callerName} · Your caller tonight
+          {site.callerName} · Your referee tonight
         </span>
         <p className="mt-2 font-mono text-[9.5px] uppercase tracking-label text-pump-400/60">
           {site.callerTitle}

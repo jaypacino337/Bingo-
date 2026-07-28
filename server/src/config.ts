@@ -36,15 +36,6 @@ function list(key: string, fallback: string[]): string[] {
 
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 
-export type WinPattern = 'line' | 'x' | 'full';
-
-function pattern(): WinPattern {
-  // "Eyes down for a full house" — the site copy promises a blackout game.
-  const v = (process.env.WIN_PATTERN ?? 'full').toLowerCase();
-  if (v === 'line' || v === 'x' || v === 'full') return v;
-  throw new Error(`WIN_PATTERN must be one of line|x|full, got "${v}"`);
-}
-
 export type PotSource = 'creator_fees' | 'fixed';
 
 function potSource(): PotSource {
@@ -65,7 +56,7 @@ export const config = {
   tokenMint: str('TOKEN_MINT'),
   tokenSymbol: str('TOKEN_SYMBOL', 'BINGO'),
   tokenName: str('TOKEN_NAME', 'Onchain Bingo'),
-  /** How many whole tokens grant one bingo card. */
+  /** How many whole tokens grant one entry (one fighter in the arena). */
   tokensPerCard: num('TOKENS_PER_CARD', 1_000_000),
   /** Minimum whole tokens a wallet must hold to enter at all. */
   minTokensToPlay: num('MIN_TOKENS_TO_PLAY', 1_000_000),
@@ -89,17 +80,18 @@ export const config = {
   holderCacheSeconds: num('HOLDER_CACHE_SECONDS', 30),
 
   // --- round timing (ms) --------------------------------------------------
-  /** Join window before the balls start dropping. */
+  /** Join window before the fighters enter the arena. */
   lobbyMs: num('LOBBY_MS', 30_000),
-  /** Gap between balls. Real casino bingo sits around 2.5s. */
-  ballIntervalMs: num('BALL_INTERVAL_MS', 2_600),
-  /** Dead air before the first ball, for the "get ready" beat. */
-  preRollMs: num('PRE_ROLL_MS', 3_000),
-  /** How long the winner celebration stays on screen. */
-  celebrationMs: num('CELEBRATION_MS', 15_000),
+  /** "Fighters entering" beat before the first cull. */
+  introMs: num('INTRO_MS', 4_000),
+  /** Gap between culling waves. */
+  waveMs: num('WAVE_MS', 1_800),
+  /** Time on screen for each head-to-head duel. */
+  duelMs: num('DUEL_MS', 3_500),
+  /** How long the champion screen stays up. */
+  celebrationMs: num('CELEBRATION_MS', 12_000),
 
   // --- prizes -------------------------------------------------------------
-  winPattern: pattern(),
   /**
    * Where the round pot comes from.
    *   'creator_fees' — pot is funded from pump.fun creator fees sitting in the
@@ -197,9 +189,9 @@ export function publicConfig() {
     minTokensToPlay: config.minTokensToPlay,
     maxCardsPerWallet,
     maxWalletPercent: config.maxWalletPercent,
-    winPattern: config.winPattern,
-    ballIntervalMs: config.ballIntervalMs,
     lobbyMs: config.lobbyMs,
+    waveMs: config.waveMs,
+    duelMs: config.duelMs,
     jackpotOdds: config.jackpotOdds,
     prizeShare: config.prizeShare,
     jackpotShare: config.jackpotShare,

@@ -1,13 +1,14 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import { PublicKey } from '@solana/web3.js';
 import { config, splitPot } from './config.js';
 import {
-  drawOrder,
-  evaluateCard,
-  generateCard,
-  letterFor,
-  type Card,
-} from './bingo.js';
+  fighterId,
+  resolveRoyale,
+  type Duel,
+  type Fighter,
+  type RoyaleResult,
+} from './royale.js';
 import {
   addToJackpot,
   createRound,
@@ -19,100 +20,108 @@ import {
   updateRound,
   type RecentWinner,
 } from './db.js';
-import { PublicKey } from '@solana/web3.js';
 import { getHolderBalance, getTreasuryLamports, solToLamports } from './solana.js';
 import { payWinner } from './payout.js';
 
-export type Phase = 'lobby' | 'preroll' | 'drawing' | 'celebration';
+export type Phase = 'lobby' | 'intro' | 'culling' | 'duels' | 'champion';
 
 export interface Player {
   wallet: string;
-  cards: number;
+  entries: number;
   tokenAmount: number;
   joinedAt: number;
-}
-
-export interface Winner {
-  wallet: string;
-  cardIndex: number;
-  ballNumber: number | null;
-  ballsCalled: number;
-  prizeLamports: number;
-  jackpotWon: boolean;
-  jackpotRoll: number;
-  jackpotLamports: number;
-  line: [number, number][];
-}
-
-export interface HotCard {
-  wallet: string;
-  cardIndex: number;
-  remaining: number;
 }
 
 export interface GameState {
   roundId: number | null;
   phase: Phase;
-  pattern: string;
   /** Epoch ms when the current phase ends. */
   phaseEndsAt: number;
-  draws: number[];
-  lastBall: number | null;
-  lastLetter: string | null;
-  ballsCalled: number;
+
+  players: { wallet: string; entries: number }[];
+  playersCount: number;
+  fightersCount: number;
+
+  /** Cumulative ids of everyone knocked out so far. */
+  eliminated: string[];
+  aliveCount: number;
+  /** Ids eliminated by the most recent wave, for the kill feed. */
+  lastWave: string[];
+  waveIndex: number;
+  waveCount: number;
+
+  /** Survivors of the culling, in bracket seed order. */
+  finalists: Fighter[];
+  /** The duel on screen right now. */
+  currentDuel: (Duel & { index: number }) | null;
+  /** Duels already fought, so the bracket can be drawn. */
+  resolvedDuels: Duel[];
+  duelCount: number;
+
+  champion: Fighter | null;
+  championPrize: number;
+  jackpotWon: boolean;
+  jackpotRoll: number;
+  jackpotPrize: number;
+
   potLamports: number;
   prizeLamports: number;
   jackpotLamports: number;
   jackpotOdds: number;
-  players: { wallet: string; cards: number }[];
-  playersCount: number;
-  cardsCount: number;
-  hotCards: HotCard[];
-  winners: Winner[];
+
   serverSeedHash: string;
-  /** Only populated once the round has settled, so draws can be verified. */
+  /** Revealed once settled, so the whole round can be replayed. */
   serverSeed: string | null;
   recentWinners: RecentWinner[];
-  /** True when balances are simulated — the UI shows a TEST GAME banner. */
   demoMode: boolean;
 }
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
 
 /**
- * Stable, realistic-looking addresses for the simulated entrants used in a
- * test game. Derived from the index so the same crowd — and the same cards —
- * comes back every round instead of a fresh set of strangers each time.
+ * Stable, realistic-looking addresses for simulated entrants in a test game.
+ * Derived from the index so the same crowd returns every round.
  */
 function demoWallet(index: number): string {
-  const digest = createHash('sha256').update(`bingo-demo-player:${index}`).digest();
+  const digest = createHash('sha256').update(`royale-demo-player:${index}`).digest();
   return new PublicKey(new Uint8Array(digest)).toBase58();
 }
 
 /** Deterministic 1-in-N jackpot roll, verifiable from the revealed seed. */
-function jackpotRoll(serverSeed: string, wallet: string, cardIndex: number, odds: number): number {
-  const digest = sha256(`jackpot:${serverSeed}:${wallet}:${cardIndex}`);
-  // 52 bits is well within Number's exact-integer range.
-  const slice = Number.parseInt(digest.slice(0, 13), 16);
-  return slice % odds;
+function jackpotRoll(serverSeed: string, wallet: string, entry: number, odds: number): number {
+  const digest = sha256(`jackpot:${serverSeed}:${wallet}:${entry}`);
+  return Number.parseInt(digest.slice(0, 13), 16) % odds;
 }
 
-export class BingoEngine extends EventEmitter {
+export class RoyaleEngine extends EventEmitter {
   private roundId: number | null = null;
   private phase: Phase = 'lobby';
   private phaseEndsAt = 0;
+
   private serverSeed = '';
   private serverSeedHash = '';
   private seedRevealed = false;
-  private order: number[] = [];
-  private draws: number[] = [];
+
   private players = new Map<string, Player>();
-  private cards = new Map<string, Card>(); // key: `${wallet}:${index}`
-  private winners: Winner[] = [];
+  private result: RoyaleResult | null = null;
+
+  private eliminated: string[] = [];
+  private lastWave: string[] = [];
+  private waveIndex = 0;
+  private duelIndex = -1;
+  private resolvedDuels: Duel[] = [];
+
+  private champion: Fighter | null = null;
+  private championPrize = 0;
+  private jackpotWon = false;
+  private jackpotRollValue = -1;
+  private jackpotPrize = 0;
+
   private potLamports = 0;
   private prizeLamports = 0;
   private jackpotLamports = 0;
   private recent: RecentWinner[] = [];
+
   private timer: NodeJS.Timeout | null = null;
   private stopped = false;
 
@@ -138,239 +147,218 @@ export class BingoEngine extends EventEmitter {
     this.serverSeed = randomBytes(32).toString('hex');
     this.serverSeedHash = sha256(this.serverSeed);
     this.seedRevealed = false;
-    this.order = drawOrder(this.serverSeed);
-    this.draws = [];
+
     this.players.clear();
-    this.cards.clear();
-    this.winners = [];
+    this.result = null;
+    this.eliminated = [];
+    this.lastWave = [];
+    this.waveIndex = 0;
+    this.duelIndex = -1;
+    this.resolvedDuels = [];
+    this.champion = null;
+    this.championPrize = 0;
+    this.jackpotWon = false;
+    this.jackpotRollValue = -1;
+    this.jackpotPrize = 0;
+
     this.phase = 'lobby';
     this.phaseEndsAt = Date.now() + config.lobbyMs;
 
     this.potLamports = await this.computePot();
-    const split = splitPot(this.potLamports);
-    this.prizeLamports = split.prize;
+    this.prizeLamports = splitPot(this.potLamports).prize;
     this.roundId = null; // written lazily, on the first join
-
-    console.log(
-      `[engine] lobby open — pot ${this.potLamports} lamports ` +
-        `(prize ${split.prize}, jackpot +${split.jackpot})`,
-    );
 
     await this.seatDemoPlayers();
 
     this.broadcast('phase');
-    this.schedule(config.lobbyMs, () => void this.startPreRoll());
+    this.schedule(config.lobbyMs, () => void this.startIntro());
   }
 
-  /** Test mode only — fills the floor so a round can be watched end to end. */
+  /** Test mode only — fills the arena so a round can be watched end to end. */
   private async seatDemoPlayers(): Promise<void> {
     if (config.demoPlayers <= 0 || !config.devFakeHolders) return;
-    for (let i = 0; i < config.demoPlayers; i++) {
-      await this.join(demoWallet(i));
-    }
-    console.log(`[engine] seated ${config.demoPlayers} simulated entrants (test game)`);
+    for (let i = 0; i < config.demoPlayers; i++) await this.join(demoWallet(i));
   }
 
-  /**
-   * Persist the round on first join. An empty lobby recycles every LOBBY_MS,
-   * and we don't want a row in Supabase for each of those idle spins.
-   */
   private async ensureRoundRow(): Promise<void> {
     if (this.roundId !== null) return;
     const split = splitPot(this.potLamports);
     this.roundId = await createRound({
       serverSeedHash: this.serverSeedHash,
-      pattern: config.winPattern,
+      pattern: 'duel-royale',
       potLamports: this.potLamports,
       prizeLamports: split.prize,
       jackpotAddLamports: split.jackpot,
     });
   }
 
-  /**
-   * Pot sizing. With POT_SOURCE=creator_fees the pot is a slice of whatever
-   * pump.fun creator fees have been claimed into the treasury, minus the
-   * jackpot already owed to players and a small reserve for tx fees.
-   */
   private async computePot(): Promise<number> {
-    if (config.potSource === 'fixed') {
-      return solToLamports(config.roundPotSol);
-    }
+    if (config.potSource === 'fixed') return solToLamports(config.roundPotSol);
 
     const treasury = await getTreasuryLamports();
     const reserve = solToLamports(config.treasuryReserveSol);
-    // The jackpot is player money already sitting in the treasury — never
-    // recycle it into a round pot.
+    // The jackpot is player money already sitting in the treasury.
     const available = treasury - reserve - this.jackpotLamports;
-    if (available <= 0) {
-      console.warn(
-        `[engine] treasury has no unreserved balance (bal=${treasury}, jackpot=${this.jackpotLamports}) — ` +
-          `pot falls back to MIN_ROUND_POT_SOL`,
-      );
-      return solToLamports(config.minRoundPotSol);
-    }
+    if (available <= 0) return solToLamports(config.minRoundPotSol);
 
     const raw = Math.floor(available * config.potPayoutRatio);
-    const min = solToLamports(config.minRoundPotSol);
-    const max = solToLamports(config.maxRoundPotSol);
-    return Math.max(min, Math.min(max, raw));
+    return Math.max(
+      solToLamports(config.minRoundPotSol),
+      Math.min(solToLamports(config.maxRoundPotSol), raw),
+    );
   }
 
-  private async startPreRoll(): Promise<void> {
+  /** Everyone's entries, flattened into individual fighters. */
+  private buildFighters(): Fighter[] {
+    const fighters: Fighter[] = [];
+    for (const player of this.players.values()) {
+      for (let entry = 0; entry < player.entries; entry++) {
+        fighters.push({ wallet: player.wallet, entry });
+      }
+    }
+    return fighters;
+  }
+
+  private async startIntro(): Promise<void> {
     if (this.stopped) return;
 
-    if (this.players.size === 0) {
-      // Nobody joined — recycle straight back into a fresh lobby rather than
-      // burning a pot on an empty room. Nothing was persisted, so nothing to
-      // clean up.
+    // A one-fighter arena has nobody to duel. Recycle instead of crowning
+    // someone who never faced an opponent.
+    if (this.players.size < 2) {
       await this.openLobby();
       return;
     }
 
-    this.phase = 'preroll';
-    this.phaseEndsAt = Date.now() + config.preRollMs;
+    this.result = resolveRoyale(this.serverSeed, this.buildFighters());
+    this.phase = 'intro';
+    this.phaseEndsAt = Date.now() + config.introMs;
+
     await updateRound(this.roundId, {
       status: 'drawing',
       players_count: this.players.size,
-      cards_count: this.totalCards(),
+      cards_count: this.result.ranking.length,
     });
+
+    console.log(
+      `[engine] round ${this.roundId ?? '(local)'} — ${this.players.size} players, ` +
+        `${this.result.ranking.length} fighters, ${this.result.waves.length} waves, ` +
+        `${this.result.duels.length} duels`,
+    );
+
     this.broadcast('phase');
-    this.schedule(config.preRollMs, () => this.startDrawing());
+    this.schedule(config.introMs, () => this.nextWave());
   }
 
-  private startDrawing(): void {
-    if (this.stopped) return;
-    this.phase = 'drawing';
-    this.phaseEndsAt = Date.now() + config.ballIntervalMs;
-    this.broadcast('phase');
-    this.schedule(config.ballIntervalMs, () => void this.drawBall());
-  }
+  private nextWave(): void {
+    if (this.stopped || !this.result) return;
 
-  private async drawBall(): Promise<void> {
-    if (this.stopped) return;
-
-    const ball = this.order[this.draws.length];
-    if (ball === undefined) {
-      // All 75 balls called with no winner. Only reachable with an exotic
-      // pattern config; settle with no winner and roll the pot forward.
-      console.warn('[engine] exhausted all 75 balls with no winner');
-      await this.settle();
+    if (this.waveIndex >= this.result.waves.length) {
+      this.startDuels();
       return;
     }
 
-    this.draws.push(ball);
-    this.phaseEndsAt = Date.now() + config.ballIntervalMs;
+    const wave = this.result.waves[this.waveIndex] ?? [];
+    this.lastWave = wave.map(fighterId);
+    this.eliminated.push(...this.lastWave);
+    this.waveIndex++;
 
-    const drawn = new Set(this.draws);
-    const winners: Winner[] = [];
-    const hot: HotCard[] = [];
+    this.phase = 'culling';
+    this.phaseEndsAt = Date.now() + config.waveMs;
+    this.broadcast('wave');
+    this.schedule(config.waveMs, () => this.nextWave());
+  }
 
-    for (const [key, card] of this.cards) {
-      const sep = key.lastIndexOf(':');
-      const wallet = key.slice(0, sep);
-      const cardIndex = Number(key.slice(sep + 1));
-      const result = evaluateCard(card, drawn, config.winPattern);
+  private startDuels(): void {
+    if (this.stopped || !this.result) return;
+    this.phase = 'duels';
+    this.lastWave = [];
+    this.nextDuel();
+  }
 
-      if (result.won) {
-        winners.push({
-          wallet,
-          cardIndex,
-          ballNumber: ball,
-          ballsCalled: this.draws.length,
-          prizeLamports: 0, // filled in below once we know how many split it
-          jackpotWon: false,
-          jackpotRoll: -1,
-          jackpotLamports: 0,
-          line: result.completed[0] ?? [],
-        });
-      } else if (result.remaining <= 3) {
-        hot.push({ wallet, cardIndex, remaining: result.remaining });
-      }
+  private nextDuel(): void {
+    if (this.stopped || !this.result) return;
+
+    // Bank the duel that just finished before moving on.
+    const finished = this.result.duels[this.duelIndex];
+    if (finished) {
+      this.resolvedDuels.push(finished);
+      const loser =
+        finished.winner && fighterId(finished.winner) === fighterId(finished.a as Fighter)
+          ? finished.b
+          : finished.a;
+      if (loser) this.eliminated.push(fighterId(loser));
     }
 
-    this.hotCards = hot.sort((a, b) => a.remaining - b.remaining).slice(0, 8);
+    this.duelIndex++;
 
-    this.emit('ball', { ball, letter: letterFor(ball), index: this.draws.length });
-    this.broadcast('ball');
-
-    if (winners.length > 0) {
-      this.winners = winners;
-      await this.settle();
+    if (this.duelIndex >= this.result.duels.length) {
+      void this.crown();
       return;
     }
 
-    this.schedule(config.ballIntervalMs, () => void this.drawBall());
+    this.phaseEndsAt = Date.now() + config.duelMs;
+    this.broadcast('duel');
+    this.schedule(config.duelMs, () => this.nextDuel());
   }
 
-  private hotCards: HotCard[] = [];
+  private async crown(): Promise<void> {
+    if (this.stopped || !this.result) return;
 
-  private async settle(): Promise<void> {
-    if (this.stopped) return;
-
-    this.phase = 'celebration';
+    this.phase = 'champion';
     this.phaseEndsAt = Date.now() + config.celebrationMs;
     this.seedRevealed = true;
+    this.champion = this.result.champion;
 
     const split = splitPot(this.potLamports);
     // 20% of every pot feeds the progressive jackpot, win or no win.
     this.jackpotLamports = await addToJackpot(split.jackpot);
 
-    if (this.winners.length > 0) {
-      const share = Math.floor(split.prize / this.winners.length);
+    if (this.champion) {
+      this.championPrize = split.prize;
+      this.jackpotRollValue = jackpotRoll(
+        this.serverSeed,
+        this.champion.wallet,
+        this.champion.entry,
+        config.jackpotOdds,
+      );
+      this.jackpotWon = this.jackpotRollValue === 0;
 
-      // Each winning card rolls its own 1-in-N shot at the jackpot.
-      const hitters: Winner[] = [];
-      for (const w of this.winners) {
-        w.prizeLamports = share;
-        w.jackpotRoll = jackpotRoll(this.serverSeed, w.wallet, w.cardIndex, config.jackpotOdds);
-        w.jackpotWon = w.jackpotRoll === 0;
-        if (w.jackpotWon) hitters.push(w);
-      }
-
-      if (hitters.length > 0) {
-        const pool = await drainJackpot(this.roundId);
-        const jackpotShare = Math.floor(pool / hitters.length);
-        for (const w of hitters) w.jackpotLamports = jackpotShare;
+      if (this.jackpotWon) {
+        this.jackpotPrize = await drainJackpot(this.roundId);
         this.jackpotLamports = await getJackpot();
-        console.log(
-          `[engine] JACKPOT HIT — ${hitters.length} winner(s) split ${pool} lamports`,
-        );
+        console.log(`[engine] JACKPOT HIT — ${this.jackpotPrize} lamports`);
       }
 
-      for (const w of this.winners) {
-        const winnerId = await recordWinner({
-          roundId: this.roundId ?? 0,
-          wallet: w.wallet,
-          cardIndex: w.cardIndex,
-          ballNumber: w.ballNumber,
-          ballsCalled: w.ballsCalled,
-          prizeLamports: w.prizeLamports,
-          jackpotWon: w.jackpotWon,
-          jackpotRoll: w.jackpotRoll,
-          jackpotLamports: w.jackpotLamports,
-        });
-        // Fire and forget: a slow or failed transfer must not stall the room.
-        void payWinner(winnerId, w.wallet, w.prizeLamports + w.jackpotLamports);
-      }
+      const winnerId = await recordWinner({
+        roundId: this.roundId ?? 0,
+        wallet: this.champion.wallet,
+        cardIndex: this.champion.entry,
+        ballNumber: null,
+        ballsCalled: this.result.ranking.length,
+        prizeLamports: this.championPrize,
+        jackpotWon: this.jackpotWon,
+        jackpotRoll: this.jackpotRollValue,
+        jackpotLamports: this.jackpotPrize,
+      });
+      // Fire and forget: a slow transfer must not stall the arena.
+      void payWinner(winnerId, this.champion.wallet, this.championPrize + this.jackpotPrize);
 
       console.log(
-        `[engine] round ${this.roundId ?? '(local)'} won by ${this.winners
-          .map((w) => `${w.wallet.slice(0, 4)}…#${w.cardIndex}`)
-          .join(', ')} on ball ${this.draws.at(-1)} (${this.draws.length} called)`,
+        `[engine] champion ${this.champion.wallet.slice(0, 6)}… wins ${this.championPrize}` +
+          (this.jackpotWon ? ` + ${this.jackpotPrize} JACKPOT` : ''),
       );
     }
 
     await updateRound(this.roundId, {
       status: 'settled',
       server_seed: this.serverSeed,
-      draws: this.draws,
       settled_at: new Date().toISOString(),
       players_count: this.players.size,
-      cards_count: this.totalCards(),
+      cards_count: this.result.ranking.length,
     });
 
     this.recent = await recentWinners();
-    this.broadcast('settled');
+    this.broadcast('champion');
     this.schedule(config.celebrationMs, () => void this.openLobby());
   }
 
@@ -383,21 +371,21 @@ export class BingoEngine extends EventEmitter {
   // Joining
   // -------------------------------------------------------------------------
 
-  /**
-   * Add a wallet to the current round. Only valid during the lobby phase —
-   * joining mid-draw would let someone pick a card after seeing the balls.
-   */
   async join(wallet: string): Promise<
-    | { ok: true; cards: number; tokenAmount: number }
+    | { ok: true; entries: number; tokenAmount: number }
     | { ok: false; reason: string; code: string }
   > {
     if (this.phase !== 'lobby') {
-      return { ok: false, code: 'closed', reason: 'Round already started — you are in the next one.' };
+      return {
+        ok: false,
+        code: 'closed',
+        reason: 'This round already started — you are in the next one.',
+      };
     }
 
     const existing = this.players.get(wallet);
     if (existing) {
-      return { ok: true, cards: existing.cards, tokenAmount: existing.tokenAmount };
+      return { ok: true, entries: existing.entries, tokenAmount: existing.tokenAmount };
     }
 
     const balance = await getHolderBalance(wallet, true);
@@ -406,7 +394,7 @@ export class BingoEngine extends EventEmitter {
         ok: false,
         code: 'ineligible',
         reason:
-          `You need at least ${config.minTokensToPlay.toLocaleString()} $${config.tokenSymbol} to play. ` +
+          `You need at least ${config.minTokensToPlay.toLocaleString()} $${config.tokenSymbol} to enter. ` +
           `You hold ${Math.floor(balance.amount).toLocaleString()}.`,
       };
     }
@@ -415,13 +403,10 @@ export class BingoEngine extends EventEmitter {
 
     this.players.set(wallet, {
       wallet,
-      cards: balance.cards,
+      entries: balance.cards,
       tokenAmount: balance.amount,
       joinedAt: Date.now(),
     });
-    for (let i = 0; i < balance.cards; i++) {
-      this.cards.set(`${wallet}:${i}`, generateCard(wallet, i));
-    }
 
     await recordEntry({
       roundId: this.roundId,
@@ -431,12 +416,12 @@ export class BingoEngine extends EventEmitter {
     });
 
     this.broadcast('join');
-    return { ok: true, cards: balance.cards, tokenAmount: balance.amount };
+    return { ok: true, entries: balance.cards, tokenAmount: balance.amount };
   }
 
-  private totalCards(): number {
+  private totalFighters(): number {
     let total = 0;
-    for (const p of this.players.values()) total += p.cards;
+    for (const player of this.players.values()) total += player.entries;
     return total;
   }
 
@@ -445,27 +430,42 @@ export class BingoEngine extends EventEmitter {
   // -------------------------------------------------------------------------
 
   getState(): GameState {
-    const last = this.draws.at(-1) ?? null;
+    const duel = this.result?.duels[this.duelIndex];
+    const fighters = this.result?.ranking.length ?? this.totalFighters();
+
     return {
       roundId: this.roundId,
       phase: this.phase,
-      pattern: config.winPattern,
       phaseEndsAt: this.phaseEndsAt,
-      draws: this.draws,
-      lastBall: last,
-      lastLetter: last === null ? null : letterFor(last),
-      ballsCalled: this.draws.length,
+
+      players: [...this.players.values()]
+        .sort((a, b) => b.entries - a.entries)
+        .map((p) => ({ wallet: p.wallet, entries: p.entries })),
+      playersCount: this.players.size,
+      fightersCount: fighters,
+
+      eliminated: this.eliminated,
+      aliveCount: Math.max(0, fighters - this.eliminated.length),
+      lastWave: this.lastWave,
+      waveIndex: this.waveIndex,
+      waveCount: this.result?.waves.length ?? 0,
+
+      finalists: this.result?.finalists ?? [],
+      currentDuel: duel ? { ...duel, index: this.duelIndex } : null,
+      resolvedDuels: this.resolvedDuels,
+      duelCount: this.result?.duels.length ?? 0,
+
+      champion: this.champion,
+      championPrize: this.championPrize,
+      jackpotWon: this.jackpotWon,
+      jackpotRoll: this.jackpotRollValue,
+      jackpotPrize: this.jackpotPrize,
+
       potLamports: this.potLamports,
       prizeLamports: this.prizeLamports,
       jackpotLamports: this.jackpotLamports,
       jackpotOdds: config.jackpotOdds,
-      players: [...this.players.values()]
-        .sort((a, b) => b.cards - a.cards)
-        .map((p) => ({ wallet: p.wallet, cards: p.cards })),
-      playersCount: this.players.size,
-      cardsCount: this.totalCards(),
-      hotCards: this.hotCards,
-      winners: this.winners,
+
       serverSeedHash: this.serverSeedHash,
       serverSeed: this.seedRevealed ? this.serverSeed : null,
       recentWinners: this.recent,
@@ -478,4 +478,4 @@ export class BingoEngine extends EventEmitter {
   }
 }
 
-export const engine = new BingoEngine();
+export const engine = new RoyaleEngine();

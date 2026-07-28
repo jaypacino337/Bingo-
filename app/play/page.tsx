@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { GameRoomClient } from '@/components/GameRoomClient';
 
 export const metadata: Metadata = {
-  title: 'The hall',
-  description: 'Live on-chain bingo. Eyes down.',
+  title: 'The arena',
+  description: 'Live on-chain duel royale. Last one standing takes the pot.',
 };
 
 /**

@@ -4,9 +4,9 @@ import { site } from '@/lib/site';
 /** The scrolling strip between sections. */
 export function Marquee() {
   const items = [
-    `${fullTokens(site.tokensPerCard)} $${site.symbol} = 1 entry`,
-    'Winner takes the fees',
-    'Eyes down for a full house',
+    `${fullTokens(site.tokensPerCard)} $${site.symbol} = 1 fighter`,
+    'Last one standing takes the fees',
+    'Eight enter the duels · one walks out',
     '80% pot · 20% jackpot',
     '1-in-25 jackpot roll',
   ];

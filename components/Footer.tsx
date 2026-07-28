@@ -30,7 +30,7 @@ export function Footer() {
             </a>
           ) : null}
           <span className="font-mono text-[10px] uppercase tracking-label text-forest-700">
-            Eyes down. Fees up. · Not financial advice · {year}
+            Everyone fights. One walks out. · Not financial advice · {year}
           </span>
         </div>
       </div>

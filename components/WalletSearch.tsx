@@ -3,9 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { BingoCard } from './BingoCard';
 import { fetchHolder, type HolderInfo } from '@/lib/api';
-import { generateCard } from '@/lib/bingo';
 import { compactTokens, fullTokens, shortWallet } from '@/lib/format';
 import { buyUrl, site } from '@/lib/site';
 import { useStoredWallet } from '@/lib/useGame';
@@ -13,8 +11,8 @@ import { useStoredWallet } from '@/lib/useGame';
 type Status = 'idle' | 'loading' | 'found' | 'error';
 
 /**
- * Paste a wallet, we look up its $BINGO, and the card it earned zooms up out
- * of the page. Click the card to take your seat in the hall.
+ * Paste a wallet, we look up its holdings, and the squad it earned zooms up
+ * out of the page. Click it to enter the arena.
  */
 export function WalletSearch({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -23,7 +21,6 @@ export function WalletSearch({ compact = false }: { compact?: boolean }) {
   const [status, setStatus] = useState<Status>('idle');
   const [holder, setHolder] = useState<HolderInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cardIndex, setCardIndex] = useState(0);
 
   const search = useCallback(
     async (raw: string) => {
@@ -32,7 +29,6 @@ export function WalletSearch({ compact = false }: { compact?: boolean }) {
 
       setStatus('loading');
       setError(null);
-      setCardIndex(0);
       try {
         const info = await fetchHolder(wallet);
         setHolder(info);
@@ -95,7 +91,7 @@ export function WalletSearch({ compact = false }: { compact?: boolean }) {
           disabled={status === 'loading' || value.trim().length === 0}
           className="btn-primary shrink-0"
         >
-          {status === 'loading' ? 'Checking…' : 'Find my cards'}
+          {status === 'loading' ? 'Checking…' : 'Find my fighters'}
         </button>
       </form>
 
@@ -133,52 +129,49 @@ export function WalletSearch({ compact = false }: { compact?: boolean }) {
                   <p className="mb-4 text-sm text-pump-200/80">
                     That&rsquo;s{' '}
                     <span className="font-bold text-pump-300">
-                      {holder.cards} card{holder.cards === 1 ? '' : 's'}
+                      {holder.cards} fighter{holder.cards === 1 ? '' : 's'}
                     </span>{' '}
-                    in every game.
+                    in every round.
                   </p>
 
                   <button
                     type="button"
                     onClick={enter}
                     className="group block w-full text-left"
-                    aria-label="Take your seat in the hall"
+                    aria-label="Enter the arena"
                   >
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <BingoCard
-                        card={generateCard(holder.wallet, cardIndex)}
-                        size="lg"
-                        label={`Card #${String(cardIndex + 1).padStart(3, '0')} · ${shortWallet(holder.wallet)}`}
-                        footer="Click to take your seat"
-                        className="ring-4 ring-pump-400/0 transition group-hover:ring-pump-400/60"
-                      />
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="overflow-hidden rounded-2xl border-2 border-forest-900 bg-white shadow-card ring-4 ring-pump-400/0 transition group-hover:ring-pump-400/60"
+                    >
+                      <div className="border-b border-forest-900/10 bg-mint-50 px-3 py-2 text-center font-mono text-[10px] uppercase tracking-label text-forest-700">
+                        Your squad · {shortWallet(holder.wallet)}
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-1.5 p-5">
+                        {Array.from({ length: Math.min(holder.cards, 60) }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="flex h-7 w-7 items-center justify-center rounded-md bg-pump-400 font-mono text-[9px] font-bold text-forest-900"
+                          >
+                            {i + 1}
+                          </span>
+                        ))}
+                        {holder.cards > 60 ? (
+                          <span className="flex h-7 items-center px-2 font-mono text-[10px] text-forest-700">
+                            +{holder.cards - 60}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="border-t border-forest-900/10 bg-mint-50 px-3 py-2 text-center font-mono text-[10px] uppercase tracking-label text-forest-700">
+                        Click to enter the arena
+                      </div>
                     </motion.div>
                   </button>
 
-                  {holder.cards > 1 ? (
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-                      {Array.from({ length: Math.min(holder.cards, 12) }).map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setCardIndex(i)}
-                          aria-label={`Preview card ${i + 1}`}
-                          className={`h-2 w-2 rounded-full transition ${
-                            i === cardIndex ? 'w-5 bg-pump-400' : 'bg-pump-400/35 hover:bg-pump-400/70'
-                          }`}
-                        />
-                      ))}
-                      {holder.cards > 12 ? (
-                        <span className="ml-1 font-mono text-[10px] text-pump-400/70">
-                          +{holder.cards - 12}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-
                   <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
                     <button type="button" onClick={enter} className="btn-primary">
-                      Take your seat →
+                      Enter the arena →
                     </button>
                     <button type="button" onClick={close} className="btn-dark">
                       Not now
@@ -213,7 +206,7 @@ function NotEnoughPanel({ holder, onClose }: { holder: HolderInfo; onClose: () =
   return (
     <div className="rounded-2xl border-2 border-forest-900 bg-white p-6 text-center shadow-card">
       <p className="eyebrow mb-2">Not in this one</p>
-      <h3 className="mb-2 text-xl font-extrabold tracking-tight">You need a book of cards</h3>
+      <h3 className="mb-2 text-xl font-extrabold tracking-tight">You need a fighter</h3>
       <p className="mb-1 text-sm text-forest-900/70">
         This wallet holds{' '}
         <span className="font-bold text-forest-900">
@@ -222,7 +215,7 @@ function NotEnoughPanel({ holder, onClose }: { holder: HolderInfo; onClose: () =
         .
       </p>
       <p className="mb-5 text-sm text-forest-900/70">
-        You need {fullTokens(holder.minTokensToPlay)} for your first card —{' '}
+        You need {fullTokens(holder.minTokensToPlay)} for your first fighter —{' '}
         <span className="font-bold text-pump-600">
           {fullTokens(holder.toNextCard)} more
         </span>
