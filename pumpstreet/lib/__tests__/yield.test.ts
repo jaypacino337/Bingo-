@@ -215,6 +215,42 @@ describe('emission schedule', () => {
   });
 });
 
+// ── Property tax ────────────────────────────────────────────────────────────
+
+describe('property tax', () => {
+  it('taxes higher tiers at a higher rate', () => {
+    const rates = [1, 3, 5].map((tier) => {
+      const plots = [stakedPlot({ tier, path: 'RESIDENTIAL' })];
+      const r = settleDay({ plots, market: flatMarket, dailyEmission: 10_000, seed: 4 });
+      const s = r.settlements[0];
+      return s.taxPaid / s.gross;
+    });
+    expect(rates[1]).toBeGreaterThan(rates[0]);
+    expect(rates[2]).toBeGreaterThan(rates[1]);
+  });
+
+  it('never takes more than 90% of gross, so no plot nets zero from tax', () => {
+    for (const tier of [0, 1, 2, 3, 4, 5]) {
+      const plots = [stakedPlot({ tier, path: 'RESIDENTIAL' }, 3)];
+      const r = settleDay({ plots, market: flatMarket, dailyEmission: 10_000, seed: 6 });
+      const s = r.settlements[0];
+      expect(s.taxPaid / s.gross).toBeLessThanOrEqual(0.9 + 1e-9);
+      expect(s.payout).toBeGreaterThan(0);
+    }
+  });
+
+  it('counts tax toward the emission budget rather than minting extra', () => {
+    const plots = generateCollection(40, 21).map((p) => ({
+      ...p,
+      building: { ...p.building, staked: true, path: 'RESIDENTIAL' as const, tier: 3 },
+    }));
+    const r = settleDay({ plots, market: flatMarket, dailyEmission: 50_000, seed: 2 });
+    const paid = r.settlements.reduce((s, x) => s + x.payout + x.taxPaid, 0);
+    expect(paid).toBeLessThanOrEqual(50_000 + 1e-6);
+    expect(r.taxBurned).toBeGreaterThan(0);
+  });
+});
+
 // ── Gini ────────────────────────────────────────────────────────────────────
 
 describe('gini', () => {

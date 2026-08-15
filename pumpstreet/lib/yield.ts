@@ -17,6 +17,7 @@ import {
   PATH_BASE_MULT,
   RESIDENTIAL_NOISE,
   TAX_RATE_ON_YIELD,
+  TIER_TAX_BRACKET,
   TIERS,
 } from './constants';
 import { eventConditionDelta, eventWeightMod, rollEvents } from './events';
@@ -202,7 +203,10 @@ export function settleDay(
 
     // Property tax comes off the top and is burned. Taken as a share of yield
     // rather than a flat fee so it can never bankrupt a plot.
-    const taxRate = TAX_RATE_ON_YIELD * DISTRICT_TAX_MULT[row.plot.land.district];
+    const bracket =
+      TIER_TAX_BRACKET[Math.min(row.plot.building.tier, TIER_TAX_BRACKET.length - 1)];
+    const taxRate =
+      TAX_RATE_ON_YIELD * bracket * DISTRICT_TAX_MULT[row.plot.land.district];
     const taxPaid = gross * Math.min(0.9, taxRate);
     taxBurned += taxPaid;
 

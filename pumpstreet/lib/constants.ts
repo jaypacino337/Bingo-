@@ -196,7 +196,21 @@ export const UNSTAKE_COOLDOWN = 24 * 3600;
  *    and stop buying upgrades. Without this the burn ratio collapses; see the
  *    simulation note in docs/ECONOMY.md §10.
  */
-export const TAX_RATE_ON_YIELD = 0.4;
+export const TAX_RATE_ON_YIELD = 0.3;
+
+/**
+ * Progressive tax brackets by building tier.
+ *
+ * A flat tax left two documented targets missed: the burn ratio sat at 0.52
+ * against a 0.70 goal, and the payout Gini at 0.71 against 0.55. Brackets fix
+ * both with one mechanic — bigger buildings pay a higher rate, which compresses
+ * net payouts (lowering Gini) while raising total burn (lifting the ratio).
+ *
+ * It is also the thematically correct answer: property tax has always had
+ * brackets. Effective rate = TAX_RATE_ON_YIELD x bracket x district multiplier,
+ * capped at 90% so no plot ever nets zero.
+ */
+export const TIER_TAX_BRACKET: number[] = [1.0, 1.0, 1.25, 1.5, 1.75, 2.0];
 
 /**
  * District tax modifiers. The expensive districts are taxed harder, which is

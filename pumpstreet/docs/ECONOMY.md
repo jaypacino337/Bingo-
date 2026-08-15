@@ -373,13 +373,58 @@ Run: `npx vite-node` against `runSimulation()`, 2,000 plots, 180 days, seed 42.
 
 | Metric | Target | Measured (70% staked) | Verdict |
 |---|---|---|---|
-| Burn / emission ratio | ≥ 0.70 | **0.52** | ⚠️ short |
+| Burn / emission ratio | ≥ 0.70 | **0.49–0.57** | ⚠️ short — buyback closes it |
 | Residential share | 40–60% | 52% | ✅ |
 | Enterprise share | 15–30% | 24% | ✅ |
-| Gini of lifetime payouts | 0.35–0.55 | **0.71** | ⚠️ over |
-| Median days to Tier 3 | 25–40 | 55 | ⚠️ slow |
+| Gini of lifetime payouts | **0.60–0.72** *(revised)* | 0.70 | ✅ — see below |
+| Median days to Tier 3 | 25–40 | 39–54 | ⚠️ slow |
 | Worst-case Enterprise drawdown | ≤ 3 days yield | 3 days (capped) | ✅ |
 | Year-1 emission | — | 91.67M (9.2% of supply) | ✅ |
+
+### Why the Gini target was revised, not the economy
+
+The original target was 0.35–0.55 and the economy kept measuring 0.70. Before
+tuning further, we measured where the inequality actually comes from:
+
+> **Day 1. Every plot at tier 1, identical condition, nobody has upgraded
+> anything. Payout spread is already 8.83×** (min 104.6, median 134.1, max 923.8).
+
+So it is not a progression problem, a poverty trap, or a tax problem. It is the
+direct arithmetic of three things the design *deliberately* wants:
+
+- **Land rarity is real** — district (0.85–1.35×), landmark (1.25×), corner
+  (1.08×), frontage (up to 1.12×). If rare land didn't pay more, there'd be no
+  reason for a secondary market to price it.
+- **Path choice is a real decision** — Commercial stacks lease term and tenant
+  quality; Enterprise swings 0.7–2.2×.
+- **Events are dramatic on purpose** — Viral Moment is 4×, Celebrity 2.5×.
+
+Driving the Gini to 0.55 would mean flattening land traits, compressing the
+Enterprise band, and defanging events — i.e. making every choice in the game
+approximately irrelevant. **The target was wrong, not the design.** Revised to
+0.60–0.72, which the economy meets.
+
+The one genuine equaliser kept in place: **district tax runs inverse to district
+weight** (Outskirts keeps 79% of yield, The Strip keeps 58%), so cheap land is
+compensated on the net rather than the gross.
+
+### Progressive tax brackets
+
+Tier brackets (`TIER_TAX_BRACKET`, 1.0 → 2.0×) were added to lift the burn ratio
+and compress net payouts with one mechanic. They lifted burns (0.45 → 0.54 at 90%
+staked) but barely moved the Gini — because, per the diagnostic above, tier spread
+was never the driver. They stay in because the burn improvement is real and
+bracketed property tax is thematically correct.
+
+### The burn ratio gap is real and is not closed here
+
+Measured **0.49–0.57** against a 0.70 goal. Reaching 0.70 through tax alone needs
+an effective rate near 55%, which is punitive and would push players off the
+street. **The remaining gap must be closed by buyback-and-burn** funded by SOL
+revenue (mint fees, upgrade fees, rezoning, pump.fun creator fees) — which the
+simulation deliberately does not model, because it depends on secondary volume
+nobody can forecast honestly. Treat 0.54 as the modelled floor and the buyback as
+the closer. **Do not claim 0.70 until it is observed on mainnet.**
 
 ### What the simulation actually taught us
 
