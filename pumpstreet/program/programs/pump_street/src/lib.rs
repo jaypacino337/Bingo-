@@ -11,7 +11,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("PumpStreet11111111111111111111111111111111");
+// Placeholder program ID — a valid 32-byte key so the crate compiles. Replace
+// with the real keypair's pubkey (`solana-keygen new -o target/deploy/...`)
+// before any deploy, and keep it in sync with Anchor.toml.
+declare_id!("JCgkyUHycrGmK4CvFVfdobpoGM5aAaBkPFToTo2acVm");
 
 // ── Tunables (mirror of lib/constants.ts) ────────────────────────────────────
 
@@ -414,14 +417,19 @@ pub mod pump_street {
     /// Burn PUMPST to raise a tier. Cost is burned, not recycled to treasury.
     pub fn upgrade(ctx: Context<SpendPumpst>, decimals_scalar: u64) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
-        let p = &mut ctx.accounts.plot;
 
-        require!(p.path.is_some(), StreetError::NoPath);
-        require!(p.build_until <= now, StreetError::Building);
-        require!(!p.lease_locked(now), StreetError::LeaseLocked);
+        // Validate and price against an immutable borrow first — the burn CPI
+        // needs `&ctx.accounts`, so no mutable borrow may be live across it.
+        let next = {
+            let p = &ctx.accounts.plot;
+            require!(p.path.is_some(), StreetError::NoPath);
+            require!(p.build_until <= now, StreetError::Building);
+            require!(!p.lease_locked(now), StreetError::LeaseLocked);
 
-        let next = p.tier.checked_add(1).ok_or(StreetError::Overflow)?;
-        require!(next <= p.max_tier(), StreetError::TierCapped);
+            let next = p.tier.checked_add(1).ok_or(StreetError::Overflow)?;
+            require!(next <= p.max_tier(), StreetError::TierCapped);
+            next
+        };
 
         let cost = TIER_COSTS[next as usize]
             .checked_mul(decimals_scalar)
@@ -429,6 +437,7 @@ pub mod pump_street {
         burn_pumpst(&ctx.accounts, cost)?;
 
         // The plot keeps earning at the OLD tier until construction completes.
+        let p = &mut ctx.accounts.plot;
         p.build_until = now + TIER_BUILD_SECS[next as usize];
         p.tier = next;
 
@@ -439,21 +448,25 @@ pub mod pump_street {
 
     /// Burn PUMPST to restore condition. The perpetual sink.
     pub fn repair(ctx: Context<SpendPumpst>, decimals_scalar: u64) -> Result<()> {
-        let p = &mut ctx.accounts.plot;
-        let damage = (CONDITION_MAX - p.condition) as u64;
-        require!(damage > 0, StreetError::NothingToClaim);
+        // Price under an immutable borrow so the burn CPI can take `&ctx.accounts`.
+        let cost = {
+            let p = &ctx.accounts.plot;
+            let damage = (CONDITION_MAX - p.condition) as u64;
+            require!(damage > 0, StreetError::NothingToClaim);
 
-        // 95 PUMPST per point, x(1 + 0.6 * tier)
-        let tier_mult = 1_000 + 600 * p.tier as u64;
-        let cost = damage
-            .checked_mul(95)
-            .and_then(|v| v.checked_mul(tier_mult))
-            .and_then(|v| v.checked_div(1_000))
-            .and_then(|v| v.checked_mul(decimals_scalar))
-            .ok_or(StreetError::Overflow)?;
+            // 95 PUMPST per point, x(1 + 0.6 * tier)
+            let tier_mult = 1_000 + 600 * p.tier as u64;
+            damage
+                .checked_mul(95)
+                .and_then(|v| v.checked_mul(tier_mult))
+                .and_then(|v| v.checked_div(1_000))
+                .and_then(|v| v.checked_mul(decimals_scalar))
+                .ok_or(StreetError::Overflow)?
+        };
 
         burn_pumpst(&ctx.accounts, cost)?;
-        p.condition = CONDITION_MAX;
+
+        ctx.accounts.plot.condition = CONDITION_MAX;
 
         let c = &mut ctx.accounts.config;
         c.total_burned = c.total_burned.saturating_add(cost);

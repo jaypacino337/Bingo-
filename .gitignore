@@ -12,3 +12,8 @@ npm-debug.log*
 .vercel
 .turbo
 coverage/
+
+# Pump Street
+pumpstreet/program/target/
+pumpstreet/art/out/
+out/
