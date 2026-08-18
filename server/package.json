@@ -1,9 +1,9 @@
 {
-  "name": "onchain-bingo-server",
+  "name": "cash-cow-server",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Onchain Bingo game engine — round loop, WebSocket broadcast, holder verification, payouts.",
+  "description": "Cash Cow airdrop engine — holder snapshots, proportional payouts, WebSocket state.",
   "engines": {
     "node": ">=20"
   },

@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { config, LAMPORTS_PER_SOL, maxCardsPerWallet } from './config.js';
+import { config, LAMPORTS_PER_SOL } from './config.js';
 
 export const connection = new Connection(config.rpcUrl, 'confirmed');
 
@@ -10,11 +10,6 @@ export interface HolderBalance {
   wallet: string;
   /** Whole-token (UI) amount, decimals applied. */
   amount: number;
-  /** Cards this wallet is entitled to, after min/cap rules. */
-  cards: number;
-  eligible: boolean;
-  /** Tokens still needed to reach the next card. */
-  toNextCard: number;
   fetchedAt: number;
 }
 
@@ -31,18 +26,6 @@ export function isValidWallet(address: string): boolean {
   }
 }
 
-function cardsFor(amount: number): { cards: number; eligible: boolean; toNextCard: number } {
-  if (amount < config.minTokensToPlay) {
-    return { cards: 0, eligible: false, toNextCard: config.minTokensToPlay - amount };
-  }
-  let cards = Math.floor(amount / config.tokensPerCard);
-  if (cards < 1) cards = 1; // met the minimum but the per-card threshold is higher
-  // Capped by the max-wallet rule, so no single holder can dominate a round.
-  if (maxCardsPerWallet > 0) cards = Math.min(cards, maxCardsPerWallet);
-
-  const nextThreshold = (Math.floor(amount / config.tokensPerCard) + 1) * config.tokensPerCard;
-  return { cards, eligible: true, toNextCard: Math.max(0, nextThreshold - amount) };
-}
 
 /**
  * Total balance of TOKEN_MINT held by `wallet`, summed across every token
@@ -56,12 +39,14 @@ export async function getHolderBalance(wallet: string, force = false): Promise<H
   }
 
   if (config.devFakeHolders) {
-    // Deterministic 1-8 cards' worth, derived from the address itself.
+    // Deterministic pretend balance, derived from the address itself.
     let hash = 0;
     for (let i = 0; i < wallet.length; i++) hash = (hash * 31 + wallet.charCodeAt(i)) >>> 0;
-    const amount = config.tokensPerCard * (1 + (hash % 8)) + (hash % 250_000);
-    const derived = cardsFor(amount);
-    const fake: HolderBalance = { wallet, amount, ...derived, fetchedAt: now };
+    const fake: HolderBalance = {
+      wallet,
+      amount: 250_000 + (hash % 40_000_000),
+      fetchedAt: now,
+    };
     cache.set(wallet, fake);
     return fake;
   }
@@ -87,8 +72,7 @@ export async function getHolderBalance(wallet: string, force = false): Promise<H
     }
   }
 
-  const { cards, eligible, toNextCard } = cardsFor(amount);
-  const balance: HolderBalance = { wallet, amount, cards, eligible, toNextCard, fetchedAt: now };
+  const balance: HolderBalance = { wallet, amount, fetchedAt: now };
   cache.set(wallet, balance);
   return balance;
 }
@@ -99,6 +83,11 @@ export function invalidateHolder(wallet: string): void {
 
 /** SOL balance of the creator-fee treasury, in lamports. */
 export async function getTreasuryLamports(): Promise<number> {
+  if (config.devFakeHolders) {
+    // Drifts upward like fees actually accruing, so the countdown and pot on
+    // screen behave the way they will in production.
+    return Math.floor(0.4 * LAMPORTS_PER_SOL + (Date.now() / 1000) % 600 * 2_000_000);
+  }
   if (!config.treasuryWallet) return 0;
   try {
     return await connection.getBalance(new PublicKey(config.treasuryWallet), 'confirmed');

@@ -18,19 +18,19 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[bingo] unhandled error:', error);
+    console.error('[cashcow] unhandled error:', error);
   }, [error]);
 
   return (
-    <div className="hall-glow flex min-h-screen items-center justify-center bg-forest-900 p-6">
-      <div className="w-full max-w-md rounded-2xl border-2 border-forest-900 bg-white p-7 text-center shadow-card">
-        <p className="eyebrow mb-2">One moment</p>
+    <div className="flex min-h-screen items-center justify-center bg-cash-50 p-6">
+      <div className="w-full max-w-md rounded-3xl border-2 border-ink bg-white p-8 text-center shadow-lift">
+        <p className="label mb-2">One moment</p>
         <h1 className="mb-3 text-2xl font-extrabold tracking-tight">
-          The hall is catching its breath
+          The cow is having a lie down
         </h1>
 
-        <p className="mb-5 text-[13.5px] leading-relaxed text-forest-900/65">
-          Give it a second and try again — the next game is never far away.
+        <p className="mb-6 text-[13.5px] leading-relaxed text-ink/65">
+          Give it a second and try again — the next drop is never far away.
         </p>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">

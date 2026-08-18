@@ -48,15 +48,27 @@ export function preflight(): void {
   }
 
   // --- TREASURY_WALLET ----------------------------------------------------
-  if (config.potSource === 'creator_fees') {
-    const treasury = config.treasuryWallet ?? '';
-    if (isPlaceholder(treasury)) {
-      problems.push(
-        `TREASURY_WALLET is still a placeholder ("${treasury}"). Set it to the wallet you claim pump.fun creator fees into, or switch POT_SOURCE to "fixed" while testing.`,
-      );
-    } else if (!isValidPubkey(treasury)) {
-      problems.push(`TREASURY_WALLET is not a valid Solana address ("${treasury}").`);
-    }
+  const treasury = config.treasuryWallet ?? '';
+  if (isPlaceholder(treasury)) {
+    problems.push(
+      `TREASURY_WALLET is not set. This is the wallet you claim pump.fun creator fees into — the drop pays out of its balance.`,
+    );
+  } else if (!isValidPubkey(treasury)) {
+    problems.push(`TREASURY_WALLET is not a valid Solana address ("${treasury}").`);
+  }
+
+  // --- airdrop sanity -----------------------------------------------------
+  if (config.airdropIntervalMs < 60_000) {
+    warnings.push(
+      `AIRDROP_INTERVAL_MS is ${config.airdropIntervalMs}ms. Each drop scans every token account and sends a batch of transactions — under a minute you will hit RPC limits and spend more on fees than you hand out.`,
+    );
+  }
+  if (config.autoPayout) {
+    warnings.push(
+      'AUTO_PAYOUT is ON. This server holds a key that can spend the treasury and will send real SOL on a timer. Test on devnet first.',
+    );
+  } else {
+    warnings.push('Running as a DRY RUN — drops are computed and recorded but nothing is sent.');
   }
 
   // --- RPC ----------------------------------------------------------------
@@ -66,7 +78,7 @@ export function preflight(): void {
     );
   } else if (config.rpcUrl.includes('api.mainnet-beta.solana.com') && !config.devFakeHolders) {
     warnings.push(
-      'SOLANA_RPC_URL is the public endpoint. It is heavily rate limited and holder lookups will start failing under real traffic — use Helius, QuickNode or Triton.',
+      'SOLANA_RPC_URL is the public endpoint. It does NOT allow the getProgramAccounts scan a holder snapshot needs — get a Helius, QuickNode or Triton endpoint or drops will fail.',
     );
   }
 
@@ -79,26 +91,17 @@ export function preflight(): void {
   }
   if (!config.supabaseUrl || !config.supabaseServiceKey) {
     warnings.push(
-      'Supabase is not configured — round history and the jackpot balance will reset on every restart.',
+      'Supabase is not configured — drop history will not be kept.',
     );
   }
 
   // --- Dangerous in production -------------------------------------------
   if (config.devFakeHolders) {
     warnings.push(
-      'DEV_FAKE_HOLDERS is ON. Token balances are FAKE and anyone can join with any address. Never leave this on for a live game.',
+      'DEV_FAKE_HOLDERS is ON. Balances shown on the site are FAKE. Never leave this on for a live deployment.',
     );
   }
-  if (config.demoPlayers > 0 && !config.devFakeHolders) {
-    problems.push(
-      `DEMO_PLAYERS is ${config.demoPlayers} but DEV_FAKE_HOLDERS is off. Simulated entrants must never appear in a real game — set DEV_FAKE_HOLDERS=true for a test game, or DEMO_PLAYERS=0 to go live.`,
-    );
-  }
-  if (config.demoPlayers > 0) {
-    warnings.push(
-      `TEST GAME: ${config.demoPlayers} simulated entrants will be seated every round. Set DEMO_PLAYERS=0 before launch.`,
-    );
-  }
+
   if (config.corsOrigins.includes('*')) {
     warnings.push('CORS_ORIGINS is "*" — lock it to your Vercel domain before launch.');
   }
@@ -107,7 +110,7 @@ export function preflight(): void {
 
   if (problems.length > 0) {
     console.error('\n' + '='.repeat(72));
-    console.error('  CONFIGURATION ERROR — the game server cannot start');
+    console.error('  CONFIGURATION ERROR — the airdrop server cannot start');
     console.error('='.repeat(72));
     for (const problem of problems) console.error(`\n  • ${problem}`);
     console.error(

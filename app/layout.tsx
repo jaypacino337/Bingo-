@@ -16,30 +16,31 @@ const mono = JetBrains_Mono({
   display: 'swap',
 });
 
-const SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL ?? 'BINGO';
+const SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL ?? 'COW';
+const MINUTES = process.env.NEXT_PUBLIC_DROP_MINUTES ?? '5';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bingo.fun'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cashcow.fun'),
   title: {
-    default: 'Bingo.fun — Everyone fights. One walks out.',
-    template: '%s · Bingo.fun',
+    default: 'Cash Cow — Hold the cow. Get paid.',
+    template: '%s · Cash Cow',
   },
-  description: `A duel royale on Solana. Hold $${SYMBOL} and your wallet fields fighters — one for every 1,000,000 tokens. Waves cut the arena to eight, the last eight duel head to head, and the survivor takes every creator fee earned that round.`,
-  keywords: ['duel royale', 'solana', 'pump.fun', 'onchain game', 'battle royale', SYMBOL],
+  description: `Hold $${SYMBOL} and every ${MINUTES} minutes the cow snapshots every holder and sprays the creator fees straight into their wallets, split by how much they hold. Nothing to claim.`,
+  keywords: ['cash cow', 'solana', 'pump.fun', 'memecoin', 'airdrop', 'creator fees', SYMBOL],
   openGraph: {
-    title: 'Bingo.fun — Everyone fights. One walks out.',
-    description: `Duel royale, on-chain. 1,000,000 $${SYMBOL} = 1 fighter. Last one standing takes the creator fees.`,
+    title: 'Cash Cow — Hold the cow. Get paid.',
+    description: `Creator fees paid to every holder every ${MINUTES} minutes. Nothing to claim.`,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bingo.fun — Everyone fights. One walks out.',
-    description: `Duel royale, on-chain. 1,000,000 $${SYMBOL} = 1 fighter.`,
+    title: 'Cash Cow — Hold the cow. Get paid.',
+    description: `Creator fees paid to every holder every ${MINUTES} minutes.`,
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#04140C',
+  themeColor: '#22D46B',
   width: 'device-width',
   initialScale: 1,
 };

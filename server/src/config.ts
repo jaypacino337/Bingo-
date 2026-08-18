@@ -36,14 +36,6 @@ function list(key: string, fallback: string[]): string[] {
 
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 
-export type PotSource = 'creator_fees' | 'fixed';
-
-function potSource(): PotSource {
-  const v = (process.env.POT_SOURCE ?? 'creator_fees').toLowerCase();
-  if (v === 'creator_fees' || v === 'fixed') return v;
-  throw new Error(`POT_SOURCE must be creator_fees|fixed, got "${v}"`);
-}
-
 export const config = {
   // --- server -------------------------------------------------------------
   port: num('PORT', 8080),
@@ -54,130 +46,60 @@ export const config = {
   // --- token / eligibility ------------------------------------------------
   /** The pump.fun mint address (the "CA"). */
   tokenMint: str('TOKEN_MINT'),
-  tokenSymbol: str('TOKEN_SYMBOL', 'BINGO'),
-  tokenName: str('TOKEN_NAME', 'Onchain Bingo'),
-  /** How many whole tokens grant one entry (one fighter in the arena). */
-  tokensPerCard: num('TOKENS_PER_CARD', 1_000_000),
-  /** Minimum whole tokens a wallet must hold to enter at all. */
-  minTokensToPlay: num('MIN_TOKENS_TO_PLAY', 1_000_000),
+  tokenSymbol: str('TOKEN_SYMBOL', 'COW'),
+  tokenName: str('TOKEN_NAME', 'Cash Cow'),
   /** Total token supply. pump.fun mints 1,000,000,000 by default. */
   tokenSupply: num('TOKEN_SUPPLY', 1_000_000_000),
-  /**
-   * Max share of supply any one wallet is allowed to hold, as a percent.
-   * The card cap is derived from this so a whale cannot dominate a round.
-   */
-  maxWalletPercent: num('MAX_WALLET_PERCENT', 5),
-  /**
-   * Explicit card cap. Leave at 0 to derive it from MAX_WALLET_PERCENT —
-   * 5% of a 1B supply is 50,000,000 tokens, which at 1M per card is 50 cards.
-   * Set a number here to override. -1 means genuinely uncapped.
-   */
-  maxCardsOverride: num('MAX_CARDS_PER_WALLET', 0),
 
   // --- solana -------------------------------------------------------------
   rpcUrl: str('SOLANA_RPC_URL', 'https://api.mainnet-beta.solana.com'),
   /** Cache holder balance lookups for this many seconds. */
   holderCacheSeconds: num('HOLDER_CACHE_SECONDS', 30),
 
-  // --- round timing (ms) --------------------------------------------------
-  /** Join window before the fighters enter the arena. */
-  lobbyMs: num('LOBBY_MS', 30_000),
-  /** "Fighters entering" beat before the first cull. */
-  introMs: num('INTRO_MS', 4_000),
-  /** Gap between culling waves. */
-  waveMs: num('WAVE_MS', 1_800),
-  /** Time on screen for each head-to-head duel. */
-  duelMs: num('DUEL_MS', 3_500),
-  /** How long the champion screen stays up. */
-  celebrationMs: num('CELEBRATION_MS', 12_000),
+  // --- airdrop ------------------------------------------------------------
+  /** How often to snapshot and pay out. Five minutes by default. */
+  airdropIntervalMs: num('AIRDROP_INTERVAL_MS', 5 * 60_000),
+  /** Share of the unreserved treasury handed out each drop. */
+  airdropPayoutRatio: num('AIRDROP_PAYOUT_RATIO', 1),
+  /** Don't bother dropping below this — fees would eat it. */
+  airdropMinPoolLamports: num('AIRDROP_MIN_POOL_LAMPORTS', 10_000_000),
+  /** Minimum whole tokens a wallet needs to be in the snapshot. */
+  airdropMinTokens: num('AIRDROP_MIN_TOKENS', 1),
+  /** Skip allocations smaller than this — dust costs more to send than it's worth. */
+  airdropMinLamports: num('AIRDROP_MIN_LAMPORTS', 5_000),
+  /** Wallets to leave out: bonding curve, LP, anything that isn't a person. */
+  excludeWallets: list('EXCLUDE_WALLETS', []),
 
-  // --- prizes -------------------------------------------------------------
-  /**
-   * Where the round pot comes from.
-   *   'creator_fees' — pot is funded from pump.fun creator fees sitting in the
-   *                    treasury wallet. Claim fees to TREASURY_WALLET (pump.fun
-   *                    "claim creator fees") and the engine sizes each round's
-   *                    pot from the unreserved balance.
-   *   'fixed'        — every round has the same pot (ROUND_POT_SOL). Useful for
-   *                    testing before the token has any volume.
-   */
-  potSource: potSource(),
-  /** Pot per round in SOL. Only used when POT_SOURCE=fixed. */
-  roundPotSol: num('ROUND_POT_SOL', 1),
-  /** Wallet holding claimed pump.fun creator fees + the jackpot float. */
+  // --- treasury -----------------------------------------------------------
+  /** Wallet you claim pump.fun creator fees into. The drop pays out of it. */
   treasuryWallet: optional('TREASURY_WALLET'),
-  /**
-   * Fraction of the *available* (unreserved, non-jackpot) treasury balance to
-   * put up as the pot each round. 0.1 = pay out 10% of the float per round,
-   * which makes the pot grow with volume and never drains to zero.
-   */
-  potPayoutRatio: num('POT_PAYOUT_RATIO', 0.1),
-  /** Never touch this much SOL — rent, tx fees, headroom. */
+  /** Never touch this much SOL — rent and transaction fees. */
   treasuryReserveSol: num('TREASURY_RESERVE_SOL', 0.05),
-  /** Clamp the computed pot so rounds stay sane. */
-  minRoundPotSol: num('MIN_ROUND_POT_SOL', 0.01),
-  maxRoundPotSol: num('MAX_ROUND_POT_SOL', 100),
-  /** Share of the pot paid to the round winner(s). */
-  prizeShare: num('PRIZE_SHARE', 0.8),
-  /** Share of the pot pushed into the progressive jackpot. */
-  jackpotShare: num('JACKPOT_SHARE', 0.2),
-  /** 1-in-N shot at the jackpot, rolled after every win. */
-  jackpotOdds: num('JACKPOT_ODDS', 25),
 
   // --- supabase -----------------------------------------------------------
   supabaseUrl: optional('SUPABASE_URL'),
   supabaseServiceKey: optional('SUPABASE_SERVICE_ROLE_KEY'),
 
   // --- payouts (opt-in) ---------------------------------------------------
-  /** When false, wins are recorded as `pending` for manual settlement. */
+  /**
+   * When false the engine runs as a DRY RUN: it snapshots, computes every
+   * allocation and records the drop, but sends nothing. Turn it on only once
+   * you have tested on devnet — it puts a spending key on the server.
+   */
   autoPayout: bool('AUTO_PAYOUT', false),
   /** base58 secret key of the treasury wallet. Only read when AUTO_PAYOUT=true. */
   payoutSecretKey: optional('PAYOUT_SECRET_KEY'),
 
   // --- local development --------------------------------------------------
   /**
-   * DEV ONLY. Skips the RPC and hands every wallet a deterministic pretend
-   * balance, so you can play through a whole round without an RPC key or any
-   * real tokens. Never enable this on a live deployment — it would let anyone
-   * with an address into the game.
+   * DEV ONLY. Skips the RPC and invents a holder list, so the site can be
+   * driven end to end without an RPC key or a real token. Never enable this on
+   * a live deployment — the numbers on screen would be fiction.
    */
   devFakeHolders: bool('DEV_FAKE_HOLDERS', false),
 
-  /**
-   * TEST MODE. Seats this many simulated entrants at the start of every round
-   * so you can watch a full game play out with a populated floor before real
-   * holders exist. Requires DEV_FAKE_HOLDERS — the server refuses to start
-   * otherwise, so simulated players can never appear in a real game.
-   */
-  demoPlayers: num('DEMO_PLAYERS', 0),
 } as const;
 
-if (Math.abs(config.prizeShare + config.jackpotShare - 1) > 1e-9) {
-  throw new Error(
-    `PRIZE_SHARE (${config.prizeShare}) + JACKPOT_SHARE (${config.jackpotShare}) must equal 1`,
-  );
-}
-
-if (config.potSource === 'creator_fees' && !config.treasuryWallet) {
-  throw new Error('POT_SOURCE=creator_fees requires TREASURY_WALLET to be set');
-}
-
-/**
- * The most cards one wallet can play. Derived from the max-wallet rule unless
- * explicitly overridden. 0 means "no cap" internally.
- */
-export const maxCardsPerWallet: number = (() => {
-  if (config.maxCardsOverride === -1) return 0; // uncapped, on purpose
-  if (config.maxCardsOverride > 0) return config.maxCardsOverride;
-  const maxTokens = config.tokenSupply * (config.maxWalletPercent / 100);
-  return Math.max(1, Math.floor(maxTokens / config.tokensPerCard));
-})();
-
-/** Split a pot into the winner's prize and the jackpot contribution. */
-export function splitPot(lamports: number): { prize: number; jackpot: number } {
-  const prize = Math.round(lamports * config.prizeShare);
-  return { prize, jackpot: lamports - prize };
-}
 
 /** Public, non-secret config the frontend is allowed to read. */
 export function publicConfig() {
@@ -185,17 +107,9 @@ export function publicConfig() {
     tokenMint: config.tokenMint,
     tokenSymbol: config.tokenSymbol,
     tokenName: config.tokenName,
-    tokensPerCard: config.tokensPerCard,
-    minTokensToPlay: config.minTokensToPlay,
-    maxCardsPerWallet,
-    maxWalletPercent: config.maxWalletPercent,
-    lobbyMs: config.lobbyMs,
-    waveMs: config.waveMs,
-    duelMs: config.duelMs,
-    jackpotOdds: config.jackpotOdds,
-    prizeShare: config.prizeShare,
-    jackpotShare: config.jackpotShare,
-    potSource: config.potSource,
+    tokenSupply: config.tokenSupply,
+    airdropIntervalMs: config.airdropIntervalMs,
+    airdropMinTokens: config.airdropMinTokens,
     treasuryWallet: config.treasuryWallet ?? null,
     demoMode: config.devFakeHolders,
   };

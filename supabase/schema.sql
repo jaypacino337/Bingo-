@@ -1,178 +1,92 @@
 -- ============================================================================
--- BINGO.FUN — DUEL ROYALE — Supabase schema
+-- CASH COW — Supabase schema
 -- Paste this whole file into the Supabase SQL Editor and hit RUN.
 -- Safe to re-run (everything is IF NOT EXISTS / CREATE OR REPLACE).
 -- ============================================================================
 
-create extension if not exists "pgcrypto";
-
 -- ---------------------------------------------------------------------------
--- rounds
--- One row per bingo round. `server_seed` is revealed when the round settles so
--- anyone can replay the draw order and verify it was not tampered with.
+-- drops
+-- One row per payout cycle.
 -- ---------------------------------------------------------------------------
-create table if not exists public.rounds (
-  id                bigserial primary key,
-  status            text        not null default 'lobby',   -- lobby | drawing | settled
-  pattern           text        not null default 'duel-royale',  -- game mode
-  server_seed       text,                                   -- revealed at settle
-  server_seed_hash  text        not null,                   -- published at lobby open
-  draws             smallint[]  not null default '{}',  -- unused by duel royale
-  pot_lamports      bigint      not null default 0,
-  prize_lamports    bigint      not null default 0,         -- 80% of pot
-  jackpot_add_lamports bigint   not null default 0,         -- 20% of pot
-  players_count     integer     not null default 0,
-  cards_count       integer     not null default 0,
-  started_at        timestamptz not null default now(),
-  settled_at        timestamptz,
-  created_at        timestamptz not null default now()
+create table if not exists public.drops (
+  id             bigserial primary key,
+  holders        integer     not null default 0,  -- eligible holders in the snapshot
+  paid           integer     not null default 0,  -- transfers that confirmed
+  failed         integer     not null default 0,
+  pool_lamports  bigint      not null default 0,  -- what was up for grabs
+  sent_lamports  bigint      not null default 0,  -- what actually moved
+  dry_run        boolean     not null default false,
+  created_at     timestamptz not null default now()
 );
 
-create index if not exists rounds_status_idx  on public.rounds (status);
-create index if not exists rounds_created_idx on public.rounds (created_at desc);
+create index if not exists drops_created_idx on public.drops (created_at desc);
 
 -- ---------------------------------------------------------------------------
--- entries
--- A wallet joining a round, with the number of cards it was granted.
+-- payouts
+-- One row per holder per drop. This is the receipt.
 -- ---------------------------------------------------------------------------
-create table if not exists public.entries (
+create table if not exists public.payouts (
   id           bigserial primary key,
-  round_id     bigint      not null references public.rounds (id) on delete cascade,
+  drop_id      bigint      not null references public.drops (id) on delete cascade,
   wallet       text        not null,
-  cards        integer     not null,
-  token_amount numeric     not null default 0,   -- raw UI amount at join time
-  created_at   timestamptz not null default now(),
-  unique (round_id, wallet)
+  lamports     bigint      not null default 0,
+  token_amount numeric     not null default 0,   -- holding at snapshot time
+  status       text        not null default 'sent',  -- sent | failed
+  created_at   timestamptz not null default now()
 );
 
-create index if not exists entries_round_idx  on public.entries (round_id);
-create index if not exists entries_wallet_idx on public.entries (wallet);
+create index if not exists payouts_drop_idx   on public.payouts (drop_id);
+create index if not exists payouts_wallet_idx on public.payouts (wallet);
 
 -- ---------------------------------------------------------------------------
--- winners
--- One row per winning card. Multiple rows for a round = split pot.
+-- Leaderboard — who has been paid the most.
 -- ---------------------------------------------------------------------------
-create table if not exists public.winners (
-  id                bigserial primary key,
-  round_id          bigint      not null references public.rounds (id) on delete cascade,
-  wallet            text        not null,
-  card_index        integer     not null,       -- winning fighter's entry index
-  ball_number       smallint,                     -- unused by duel royale
-  balls_called      integer     not null default 0,  -- fighters in the round
-  prize_lamports    bigint      not null default 0,
-  jackpot_won       boolean     not null default false,
-  jackpot_roll      integer,                        -- 0..(odds-1); 0 == win
-  jackpot_lamports  bigint      not null default 0,
-  payout_status     text        not null default 'pending',  -- pending | sent | failed | manual
-  payout_signature  text,
-  created_at        timestamptz not null default now()
-);
-
-create index if not exists winners_round_idx  on public.winners (round_id);
-create index if not exists winners_wallet_idx on public.winners (wallet);
-create index if not exists winners_created_idx on public.winners (created_at desc);
-
--- ---------------------------------------------------------------------------
--- jackpot
--- Single-row table (id = 1) holding the running jackpot balance.
--- ---------------------------------------------------------------------------
-create table if not exists public.jackpot (
-  id             smallint primary key default 1,
-  lamports       bigint      not null default 0,
-  last_won_round bigint,
-  last_won_at    timestamptz,
-  updated_at     timestamptz not null default now(),
-  constraint jackpot_singleton check (id = 1)
-);
-
-insert into public.jackpot (id, lamports)
-values (1, 0)
-on conflict (id) do nothing;
-
--- Atomically add to the jackpot and return the new balance.
-create or replace function public.jackpot_add(amount bigint)
-returns bigint
-language plpgsql
-as $$
-declare
-  new_balance bigint;
-begin
-  update public.jackpot
-     set lamports = lamports + amount,
-         updated_at = now()
-   where id = 1
-  returning lamports into new_balance;
-  return new_balance;
-end;
-$$;
-
--- Atomically drain the jackpot (a winner hit the 1-in-N roll) and return the
--- amount that was paid out.
-create or replace function public.jackpot_drain(round bigint)
-returns bigint
-language plpgsql
-as $$
-declare
-  paid bigint;
-begin
-  -- Lock the row first so two concurrent winners can't both drain it.
-  select lamports into paid from public.jackpot where id = 1 for update;
-
-  update public.jackpot
-     set lamports = 0,
-         last_won_round = round,
-         last_won_at = now(),
-         updated_at = now()
-   where id = 1;
-
-  return coalesce(paid, 0);
-end;
-$$;
-
--- ---------------------------------------------------------------------------
--- Leaderboard view — top wallets by total winnings.
--- ---------------------------------------------------------------------------
-create or replace view public.leaderboard as
+create or replace view public.top_earners as
 select
   wallet,
-  count(*)                                   as wins,
-  sum(prize_lamports + jackpot_lamports)     as total_lamports,
-  max(created_at)                            as last_win_at
-from public.winners
+  count(*)          as drops_received,
+  sum(lamports)     as total_lamports,
+  max(created_at)   as last_paid_at
+from public.payouts
+where status = 'sent'
 group by wallet
 order by total_lamports desc;
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security
--- The game server uses the SERVICE ROLE key and bypasses RLS entirely.
--- These policies exist so you can safely expose the ANON key to the browser
--- for read-only history / leaderboard queries.
+-- The server uses the SERVICE ROLE key and bypasses RLS entirely. These
+-- policies exist so the ANON key is safe to expose for read-only queries.
 -- ---------------------------------------------------------------------------
-alter table public.rounds  enable row level security;
-alter table public.entries enable row level security;
-alter table public.winners enable row level security;
-alter table public.jackpot enable row level security;
+alter table public.drops   enable row level security;
+alter table public.payouts enable row level security;
 
-drop policy if exists "public read rounds"  on public.rounds;
-drop policy if exists "public read entries" on public.entries;
-drop policy if exists "public read winners" on public.winners;
-drop policy if exists "public read jackpot" on public.jackpot;
+drop policy if exists "public read drops"   on public.drops;
+drop policy if exists "public read payouts" on public.payouts;
 
-create policy "public read rounds"  on public.rounds  for select using (true);
-create policy "public read entries" on public.entries for select using (true);
-create policy "public read winners" on public.winners for select using (true);
-create policy "public read jackpot" on public.jackpot for select using (true);
+create policy "public read drops"   on public.drops   for select using (true);
+create policy "public read payouts" on public.payouts for select using (true);
 
--- Realtime (optional): lets the frontend subscribe to jackpot/winner changes
--- directly from Supabase in addition to the game WebSocket.
+-- Realtime (optional): lets the site react to new drops without polling.
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    alter publication supabase_realtime add table public.winners;
-    alter publication supabase_realtime add table public.jackpot;
-    alter publication supabase_realtime add table public.rounds;
+    alter publication supabase_realtime add table public.drops;
   end if;
 exception when duplicate_object then
   null;
 end
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Handy queries
+-- ---------------------------------------------------------------------------
+-- Everything one wallet has been paid:
+--   select * from payouts where wallet = 'YOUR_WALLET' order by created_at desc;
+--
+-- Total ever paid out:
+--   select sum(sent_lamports) / 1e9 as sol from drops where not dry_run;
+--
+-- Anything that failed and may need re-sending:
+--   select d.created_at, p.wallet, p.lamports
+--   from payouts p join drops d on d.id = p.drop_id
+--   where p.status = 'failed' order by d.created_at desc;

@@ -1,10 +1,8 @@
-import type { Duel, Fighter } from './royale';
-
 /**
- * Talks to the Railway game server.
+ * Talks to the Railway airdrop server.
  *
  * Set NEXT_PUBLIC_GAME_URL in Vercel to your Railway URL, e.g.
- *   https://bingo-server-production.up.railway.app
+ *   https://cashcow-production.up.railway.app
  */
 
 const RAW_GAME_URL = process.env.NEXT_PUBLIC_GAME_URL ?? '';
@@ -44,79 +42,52 @@ export function wsUrl(): string {
 export interface HolderInfo {
   wallet: string;
   amount: number;
-  cards: number;
   eligible: boolean;
-  toNextCard: number;
-  tokensPerCard: number;
-  minTokensToPlay: number;
+  minTokens: number;
+  nextDropLamports: number;
+  sharePercent: number;
+  totalEarnedLamports: number;
 }
 
-export interface GameConfig {
+export interface DropConfig {
   tokenMint: string;
   tokenSymbol: string;
   tokenName: string;
-  tokensPerCard: number;
-  minTokensToPlay: number;
-  maxCardsPerWallet: number;
-  maxWalletPercent: number;
-  lobbyMs: number;
-  waveMs: number;
-  duelMs: number;
-  jackpotOdds: number;
-  prizeShare: number;
-  jackpotShare: number;
-  potSource: string;
+  tokenSupply: number;
+  airdropIntervalMs: number;
+  airdropMinTokens: number;
   treasuryWallet: string | null;
   demoMode: boolean;
 }
 
 
-export interface RecentWinner {
-  wallet: string;
-  roundId: number;
-  prizeLamports: number;
-  jackpotLamports: number;
-  jackpotWon: boolean;
-  createdAt: string;
+export interface DropSummary {
+  id: number | null;
+  at: number;
+  holders: number;
+  paid: number;
+  failed: number;
+  poolLamports: number;
+  sentLamports: number;
+  signatures: string[];
+  dryRun: boolean;
 }
 
-export type Phase = 'lobby' | 'intro' | 'culling' | 'duels' | 'champion';
+export type DropPhase = 'waiting' | 'snapshotting' | 'sending' | 'done';
 
-export interface GameState {
-  roundId: number | null;
-  phase: Phase;
-  phaseEndsAt: number;
-
-  players: { wallet: string; entries: number }[];
-  playersCount: number;
-  fightersCount: number;
-
-  eliminated: string[];
-  aliveCount: number;
-  lastWave: string[];
-  waveIndex: number;
-  waveCount: number;
-
-  finalists: Fighter[];
-  currentDuel: (Duel & { index: number }) | null;
-  resolvedDuels: Duel[];
-  duelCount: number;
-
-  champion: Fighter | null;
-  championPrize: number;
-  jackpotWon: boolean;
-  jackpotRoll: number;
-  jackpotPrize: number;
-
-  potLamports: number;
-  prizeLamports: number;
-  jackpotLamports: number;
-  jackpotOdds: number;
-
-  serverSeedHash: string;
-  serverSeed: string | null;
-  recentWinners: RecentWinner[];
-  demoMode: boolean;
+export interface DropState {
+  phase: DropPhase;
+  nextRunAt: number;
+  intervalMs: number;
+  treasuryLamports: number;
+  pendingPoolLamports: number;
+  holderCount: number;
+  totalPaidLamports: number;
+  dropCount: number;
+  lastDrop: DropSummary | null;
+  recentDrops: DropSummary[];
+  live: boolean;
+  progress: { sent: number; total: number } | null;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -134,14 +105,10 @@ export function fetchHolder(wallet: string): Promise<HolderInfo> {
   return request<HolderInfo>(`/api/holder/${encodeURIComponent(wallet)}`);
 }
 
-export function fetchConfig(): Promise<GameConfig> {
-  return request<GameConfig>('/api/config');
+export function fetchConfig(): Promise<DropConfig> {
+  return request<DropConfig>('/api/config');
 }
 
-export function fetchState(): Promise<GameState> {
-  return request<GameState>('/api/state');
-}
-
-export function joinGame(wallet: string): Promise<{ ok: true; entries: number; tokenAmount: number }> {
-  return request('/api/join', { method: 'POST', body: JSON.stringify({ wallet }) });
+export function fetchState(): Promise<DropState> {
+  return request<DropState>('/api/state');
 }

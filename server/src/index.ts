@@ -3,26 +3,21 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import { config, publicConfig } from './config.js';
-import { engine } from './engine.js';
+import { airdrop } from './airdrop.js';
 import { getHolderBalance, isValidWallet } from './solana.js';
-import { dbEnabled, leaderboard, recentWinners } from './db.js';
-import { payoutEnabled } from './payout.js';
+import { dbEnabled, recentDrops, walletHistory } from './db.js';
 import { preflight } from './preflight.js';
 
-// Refuse to start on bad config rather than failing at the first player.
+// Refuse to start on bad config rather than failing at the first drop.
 preflight();
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '32kb' }));
-app.use(
-  cors({
-    origin: config.corsOrigins.includes('*') ? true : config.corsOrigins,
-  }),
-);
+app.use(cors({ origin: config.corsOrigins.includes('*') ? true : config.corsOrigins }));
 
 // ---------------------------------------------------------------------------
-// Rate limiting — RPC lookups are the expensive part, so guard /holder.
+// Rate limiting — RPC lookups are the expensive part.
 // ---------------------------------------------------------------------------
 const hits = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 10_000;
@@ -45,7 +40,6 @@ function rateLimit(req: express.Request, res: express.Response, next: express.Ne
   next();
 }
 
-// Keep the map from growing without bound on a long-lived process.
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of hits) if (now > entry.resetAt) hits.delete(key);
@@ -55,22 +49,18 @@ setInterval(() => {
 // Routes
 // ---------------------------------------------------------------------------
 
-/**
- * Identifies the service at the bare domain. Without this, hitting the root of
- * a misconfigured deploy gives an anonymous 404 and there is no way to tell
- * "wrong app deployed here" from "nothing deployed here".
- */
+/** Identifies the service at the bare domain — see the deploy notes. */
 app.get('/', (_req, res) => {
-  const state = engine.getState();
+  const state = airdrop.getState();
   res.json({
-    service: 'bingo-fun-game-server',
+    service: 'cash-cow-airdrop-server',
     ok: true,
-    message: 'This is the game server. The website is deployed separately on Vercel.',
+    message: 'This is the airdrop server. The website is deployed separately on Vercel.',
     phase: state.phase,
-    players: state.playersCount,
-    fighters: state.fightersCount,
+    live: state.live,
+    nextRunAt: state.nextRunAt,
     supabase: dbEnabled,
-    endpoints: ['/health', '/api/config', '/api/state', '/api/holder/:wallet', '/api/join', '/ws'],
+    endpoints: ['/health', '/api/config', '/api/state', '/api/holder/:wallet', '/api/drops'],
   });
 });
 
@@ -79,20 +69,16 @@ app.get('/health', (_req, res) => {
     ok: true,
     uptime: process.uptime(),
     supabase: dbEnabled,
-    autoPayout: payoutEnabled(),
-    phase: engine.getState().phase,
+    live: airdrop.getState().live,
+    phase: airdrop.getState().phase,
   });
 });
 
-app.get('/api/config', (_req, res) => {
-  res.json(publicConfig());
-});
+app.get('/api/config', (_req, res) => res.json(publicConfig()));
+app.get('/api/state', (_req, res) => res.json(airdrop.getState()));
+app.get('/api/drops', async (_req, res) => res.json(await recentDrops(20)));
 
-app.get('/api/state', (_req, res) => {
-  res.json(engine.getState());
-});
-
-/** Look up a wallet's holdings and how many cards it gets. */
+/** What a wallet holds, and what it's due in the next drop. */
 app.get('/api/holder/:wallet', rateLimit, async (req, res) => {
   const wallet = String(req.params.wallet ?? '').trim();
   if (!isValidWallet(wallet)) {
@@ -101,55 +87,38 @@ app.get('/api/holder/:wallet', rateLimit, async (req, res) => {
   }
   try {
     const balance = await getHolderBalance(wallet);
+    const share = airdrop.shareFor(wallet);
+    const history = await walletHistory(wallet);
     res.json({
       wallet: balance.wallet,
       amount: balance.amount,
-      cards: balance.cards,
-      eligible: balance.eligible,
-      toNextCard: balance.toNextCard,
-      tokensPerCard: config.tokensPerCard,
-      minTokensToPlay: config.minTokensToPlay,
+      eligible: balance.amount >= config.airdropMinTokens,
+      minTokens: config.airdropMinTokens,
+      nextDropLamports: share?.lamports ?? 0,
+      sharePercent: share ? share.share * 100 : 0,
+      totalEarnedLamports: history.total,
     });
   } catch (err) {
     console.error('[api] holder lookup failed:', err);
-    const detail = err instanceof Error ? err.message : String(err);
-    res.status(502).json({
-      error: 'Could not read that wallet from the chain. The RPC may be rate limited or down.',
-      detail,
-    });
+    res.status(502).json({ error: 'Could not read that wallet from the chain.' });
   }
 });
 
-/** Enter the current round. Only works while the lobby is open. */
-app.post('/api/join', rateLimit, async (req, res) => {
-  const wallet = String((req.body as { wallet?: unknown })?.wallet ?? '').trim();
-  if (!isValidWallet(wallet)) {
-    res.status(400).json({ error: 'That does not look like a Solana wallet address.' });
-    return;
-  }
-  try {
-    const result = await engine.join(wallet);
-    if (!result.ok) {
-      res.status(409).json({ error: result.reason, code: result.code });
+/** Fire a drop by hand. Guarded by ADMIN_TOKEN when one is set. */
+app.post('/api/drop', async (req, res) => {
+  if (config.adminToken) {
+    const provided = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+    if (provided !== config.adminToken) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    res.json({ ok: true, entries: result.entries, tokenAmount: result.tokenAmount });
-  } catch (err) {
-    console.error('[api] join failed:', err);
-    res.status(502).json({ error: 'Could not verify your holdings. Try again in a moment.' });
   }
-});
-
-app.get('/api/winners', async (_req, res) => {
-  res.json(await recentWinners(20));
-});
-
-app.get('/api/leaderboard', async (_req, res) => {
-  res.json(await leaderboard(20));
+  const summary = await airdrop.runDrop(true);
+  res.json({ ok: true, summary });
 });
 
 // ---------------------------------------------------------------------------
-// WebSocket — the room. Server pushes every phase change and every ball.
+// WebSocket
 // ---------------------------------------------------------------------------
 
 const server = http.createServer(app);
@@ -164,36 +133,26 @@ function send(ws: WebSocket, type: string, payload: unknown): void {
   ws.send(JSON.stringify({ type, payload }));
 }
 
-function broadcast(type: string, payload: unknown): void {
-  const message = JSON.stringify({ type, payload });
-  for (const client of wss.clients) {
-    if (client.readyState === WebSocket.OPEN) client.send(message);
-  }
-}
-
 wss.on('connection', (ws: Client) => {
   ws.isAlive = true;
   ws.on('pong', () => {
     ws.isAlive = true;
   });
-
-  // Hand the newcomer the full picture immediately.
   send(ws, 'config', publicConfig());
-  send(ws, 'state', engine.getState());
+  send(ws, 'state', airdrop.getState());
 
   ws.on('message', (raw) => {
-    let msg: { type?: string; wallet?: string };
+    let msg: { type?: string };
     try {
-      msg = JSON.parse(String(raw)) as { type?: string; wallet?: string };
+      msg = JSON.parse(String(raw)) as { type?: string };
     } catch {
       return;
     }
     if (msg.type === 'ping') send(ws, 'pong', { t: Date.now() });
-    if (msg.type === 'sync') send(ws, 'state', engine.getState());
+    if (msg.type === 'sync') send(ws, 'state', airdrop.getState());
   });
 });
 
-// Drop dead sockets so the client count stays honest.
 const heartbeat = setInterval(() => {
   for (const client of wss.clients as Set<Client>) {
     if (client.isAlive === false) {
@@ -206,13 +165,11 @@ const heartbeat = setInterval(() => {
 }, 30_000);
 heartbeat.unref();
 
-engine.on('state', ({ reason, state }: { reason: string; state: unknown }) => {
-  broadcast('state', state);
-  if (reason === 'settled') broadcast('settled', state);
-});
-
-engine.on('ball', (payload: unknown) => {
-  broadcast('ball', payload);
+airdrop.on('state', (state: unknown) => {
+  const message = JSON.stringify({ type: 'state', payload: state });
+  for (const client of wss.clients) {
+    if (client.readyState === WebSocket.OPEN) client.send(message);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -223,15 +180,15 @@ server.listen(config.port, () => {
   console.log(`[server] listening on :${config.port}`);
   console.log(`[server] mint ${config.tokenMint}`);
   console.log(
-    `[server] ${config.tokensPerCard.toLocaleString()} $${config.tokenSymbol} = 1 entry · ` +
-      `duel royale · jackpot 1-in-${config.jackpotOdds}`,
+    `[server] dropping every ${Math.round(config.airdropIntervalMs / 1000)}s to holders of ` +
+      `$${config.tokenSymbol}`,
   );
-  void engine.start();
+  void airdrop.start();
 });
 
 function shutdown(signal: string): void {
   console.log(`[server] ${signal} received, shutting down`);
-  engine.stop();
+  airdrop.stop();
   clearInterval(heartbeat);
   for (const client of wss.clients) client.close(1001, 'server shutting down');
   server.close(() => process.exit(0));

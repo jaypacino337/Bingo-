@@ -1,8 +1,8 @@
 {
-  "name": "bingo-fun-web",
+  "name": "cash-cow-web",
   "version": "1.0.0",
   "private": true,
-  "description": "Bingo.fun — old school bingo, rebuilt on Solana. Next.js frontend (deploys to Vercel).",
+  "description": "Cash Cow — creator fees paid to every holder on a timer. Next.js frontend (deploys to Vercel).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

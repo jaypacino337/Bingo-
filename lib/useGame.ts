@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchState, gameUrlProblem, wsUrl, type GameState } from './api';
+import { fetchState, gameUrlProblem, wsUrl, type DropState } from './api';
 
 export type Connection = 'connecting' | 'live' | 'polling' | 'down' | 'unconfigured';
 
@@ -11,19 +11,19 @@ interface Message {
 }
 
 /**
- * Subscribes to the game server.
+ * Subscribes to the airdrop server.
  *
  * Prefers the WebSocket so every ball lands the moment it is drawn. If the
  * socket can't be established (proxy, corp network, server asleep) it quietly
  * falls back to polling so the room still works, just less snappy.
  */
-export function useGame(): {
-  state: GameState | null;
+export function useDrop(): {
+  state: DropState | null;
   connection: Connection;
   error: string | null;
   refresh: () => void;
 } {
-  const [state, setState] = useState<GameState | null>(null);
+  const [state, setState] = useState<DropState | null>(null);
   const [connection, setConnection] = useState<Connection>('connecting');
   const [error, setError] = useState<string | null>(null);
 
@@ -88,7 +88,7 @@ export function useGame(): {
         return;
       }
       if (msg.type === 'state' || msg.type === 'settled') {
-        setState(msg.payload as GameState);
+        setState(msg.payload as DropState);
       }
     };
 
@@ -151,7 +151,7 @@ export function useStoredWallet(): [string | null, (wallet: string | null) => vo
 
   useEffect(() => {
     try {
-      setWallet(window.localStorage.getItem('bingo.wallet'));
+      setWallet(window.localStorage.getItem('cashcow.wallet'));
     } catch {
       /* private mode — just play without persistence */
     }
@@ -160,8 +160,8 @@ export function useStoredWallet(): [string | null, (wallet: string | null) => vo
   const update = useCallback((next: string | null) => {
     setWallet(next);
     try {
-      if (next) window.localStorage.setItem('bingo.wallet', next);
-      else window.localStorage.removeItem('bingo.wallet');
+      if (next) window.localStorage.setItem('cashcow.wallet', next);
+      else window.localStorage.removeItem('cashcow.wallet');
     } catch {
       /* ignore */
     }
