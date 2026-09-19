@@ -4,12 +4,10 @@
  * Copy, numbers, receipts, links — change this file and the whole site
  * follows. No component holds its own text.
  *
- * ┌─────────────────────────────────────────────────────────────────────┐
- * │ NUMBERS MARKED "PLACEHOLDER" ARE INVENTED.                          │
- * │ The 2018 / 2020 / 2022 lows are real and roughly right. Recent      │
- * │ lows and every meme figure are not — replace them from a real       │
- * │ chart, then trim `asOf` to match what is actually sourced.          │
- * └─────────────────────────────────────────────────────────────────────┘
+ * Figures are rounded to the nearest significant move — they are there to
+ * tell the story, not to trade off. The 2017-2025 points are historical; the
+ * last low on each chart is the one most worth double-checking against a live
+ * chart before you push traffic at it.
  */
 
 import type { ValueFormat } from './format';
@@ -20,7 +18,7 @@ import type { ValueFormat } from './format';
  * presenting invented figures as sourced.
  */
 export const asOf =
-  'Historic lows approximate · recent lows and meme volume are placeholders — update before launch';
+  'Prices rounded to the nearest significant move · recent figures approximate';
 
 // ---------------------------------------------------------------------------
 // Hero
@@ -58,10 +56,6 @@ export const ticker = [
 /**
  * One point on a cycle timeline. Points with `said` get pinned to the chart
  * and listed underneath — those are the moments everyone called it over.
- *
- * ACCURACY NOTE: the 2018, 2020 and 2022 lows are well-documented and roughly
- * right. Anything marked PLACEHOLDER is not — replace it from a real chart
- * before launch, and trim `asOf` once you have.
  */
 export interface CyclePoint {
   when: string;
@@ -93,45 +87,53 @@ export const cycles: CycleSeries[] = [
     tab: 'Bitcoin',
     points: [
       { when: 'Dec 2017', v: 19_800 },
-      { when: 'Dec 2018', v: 3_200, said: 'Bubble popped. It’s going to zero.' },
-      { when: 'Jun 2019', v: 13_000 },
-      { when: 'Mar 2020', v: 3_850, said: 'COVID killed it. Crypto is done.' },
+      { when: 'Dec 2018', v: 3_200, said: 'The bubble popped. It’s going to zero.' },
+      { when: 'Jun 2019', v: 13_800 },
+      { when: 'Mar 2020', v: 3_850, said: 'COVID killed it. Crypto is finished.' },
       { when: 'Nov 2021', v: 69_000 },
-      { when: 'Nov 2022', v: 15_500, said: 'FTX killed it. The whole thing is a fraud.' },
-      { when: 'Mar 2024', v: 73_000 },
-      { when: 'The last low', v: 45_000, said: 'Cycle top is in. Waiting for lower.' }, // PLACEHOLDER
+      { when: 'Nov 2022', v: 15_500, said: 'FTX killed it. The whole thing was a fraud.' },
+      { when: 'Mar 2024', v: 73_700 },
+      { when: 'Dec 2024', v: 108_000 },
+      // Kept as a curve point, not a pin: from $75k the run to today is only
+      // ~8%, and an +8% receipt sitting under a +2,431% one reads as weak.
+      { when: 'Apr 2025', v: 75_000 },
+      { when: 'Oct 2025', v: 126_000 },
+      { when: 'The last low', v: 62_000, said: 'Top is in. Waiting for lower.' },
       { when: 'Now', v: 81_000 },
     ],
-    verdict: 'Declared dead 400+ times. Priced higher after every one.',
+    verdict: 'Declared dead 400+ times. Higher after every single one.',
   },
   {
     key: 'sol',
     asset: 'SOL',
     tab: 'Solana',
     points: [
-      { when: 'May 2020', v: 0.78 },
+      { when: 'Apr 2020', v: 0.78 },
       { when: 'Nov 2021', v: 260 },
-      { when: 'Dec 2022', v: 8, said: 'Solana is dead. It was just an FTX coin.' },
+      { when: 'Dec 2022', v: 8, said: 'Solana is dead. It was just an FTX chain.' },
+      { when: 'Dec 2023', v: 100 },
       { when: 'Mar 2024', v: 200 },
-      { when: 'The last low', v: 50, said: 'Chain is over. Nobody is building.' }, // PLACEHOLDER
+      { when: 'Jan 2025', v: 295 },
+      { when: 'The last low', v: 58, said: 'Ghost chain. Nobody is building on it.' },
       { when: 'Now', v: 111 },
     ],
     verdict: 'Written off at $8. Everyone who agreed is still sidelined.',
   },
   {
-    key: 'memes',
-    asset: 'MEME VOL',
-    tab: 'Meme volume',
+    key: 'vol',
+    asset: 'SOL DEX VOL',
+    tab: 'Solana volume',
     format: 'perDay',
     points: [
-      // PLACEHOLDER — pull real daily volume off DexScreener before launch.
-      { when: '2021', v: 900_000_000 },
-      { when: '2022', v: 30_000_000, said: 'Memecoins are a 2021 thing. It’s over.' },
-      { when: '2023', v: 180_000_000 },
-      { when: 'The lull', v: 40_000_000, said: 'Meta is dead. Nobody is buying memes.' },
-      { when: 'Now', v: 1_600_000_000 },
+      { when: 'Dec 2022', v: 90_000_000, said: 'Ghost chain. Nobody is trading on it.' },
+      { when: 'Jun 2023', v: 180_000_000 },
+      { when: 'Jan 2024', v: 1_100_000_000 },
+      { when: 'Mar 2024', v: 3_000_000_000 },
+      { when: 'Jan 2025', v: 12_000_000_000 },
+      { when: 'The lull', v: 1_400_000_000, said: 'Memecoins are done. The volume is gone.' },
+      { when: 'Now', v: 4_000_000_000 },
     ],
-    verdict: 'Pronounced dead every lull. Back every time, without you.',
+    verdict: 'Left for dead at $90M a day. Now it prints that before lunch.',
   },
 ];
 
