@@ -5,10 +5,10 @@
  * follows. No component holds its own text.
  *
  * ┌─────────────────────────────────────────────────────────────────────┐
- * │ THE NUMBERS BELOW ARE PLACEHOLDERS.                                 │
- * │ They are shaped like real data so the layout is honest, but they    │
- * │ are not live and they are not sourced. Replace them with real       │
- * │ figures before launch, and keep `asOf` current.                     │
+ * │ NUMBERS MARKED "PLACEHOLDER" ARE INVENTED.                          │
+ * │ The 2018 / 2020 / 2022 lows are real and roughly right. Recent      │
+ * │ lows and every meme figure are not — replace them from a real       │
+ * │ chart, then trim `asOf` to match what is actually sourced.          │
  * └─────────────────────────────────────────────────────────────────────┘
  */
 
@@ -19,7 +19,8 @@ import type { ValueFormat } from './format';
  * leave this saying so — it is the only thing stopping the site from
  * presenting invented figures as sourced.
  */
-export const asOf = 'BTC / SOL live as of Sep 2026 · lows and meme figures are placeholders';
+export const asOf =
+  'Historic lows approximate · recent lows and meme volume are placeholders — update before launch';
 
 // ---------------------------------------------------------------------------
 // Hero
@@ -54,53 +55,83 @@ export const ticker = [
 // Section 1 — the market is back
 // ---------------------------------------------------------------------------
 
-export interface MarketStat {
+/**
+ * One point on a cycle timeline. Points with `said` get pinned to the chart
+ * and listed underneath — those are the moments everyone called it over.
+ *
+ * ACCURACY NOTE: the 2018, 2020 and 2022 lows are well-documented and roughly
+ * right. Anything marked PLACEHOLDER is not — replace it from a real chart
+ * before launch, and trim `asOf` once you have.
+ */
+export interface CyclePoint {
+  when: string;
+  /** Actual value. The chart is log-scaled, so 3,200 and 81,000 both read. */
+  v: number;
+  /** What the timeline was saying at this point. Pins it to the chart. */
+  said?: string;
+}
+
+export interface CycleSeries {
+  key: string;
   asset: string;
-  note: string;
-  /** Value at the low. */
-  low: number;
-  /** Value now. */
-  now: number;
-  /** How low/now are rendered. */
+  tab: string;
   format?: ValueFormat;
-  /** 0-1 values, oldest first. Shape only — this draws the sparkline. */
-  series: number[];
+  /** Oldest first. */
+  points: CyclePoint[];
+  /** The line under the chart once you've seen the pattern. */
+  verdict: string;
 }
 
 export const marketHeadline = 'The bull didn’t ask for permission.';
 export const marketBody =
-  'Every leg up had a chorus calling for lower. The chorus was loud. The chart was louder.';
+  'Every bottom had a chorus calling for lower. Every single one. Here is the chorus, pinned to the chart it was wrong about.';
 
-export const marketStats: MarketStat[] = [
+export const cycles: CycleSeries[] = [
   {
+    key: 'btc',
     asset: 'BTC',
-    note: 'Called dead at the lows',
-    low: 45_000, // ← PLACEHOLDER: set the actual local low
-    now: 81_000,
-    series: [0.18, 0.1, 0.22, 0.16, 0.34, 0.29, 0.48, 0.44, 0.63, 0.58, 0.78, 0.86, 0.94],
+    tab: 'Bitcoin',
+    points: [
+      { when: 'Dec 2017', v: 19_800 },
+      { when: 'Dec 2018', v: 3_200, said: 'Bubble popped. It’s going to zero.' },
+      { when: 'Jun 2019', v: 13_000 },
+      { when: 'Mar 2020', v: 3_850, said: 'COVID killed it. Crypto is done.' },
+      { when: 'Nov 2021', v: 69_000 },
+      { when: 'Nov 2022', v: 15_500, said: 'FTX killed it. The whole thing is a fraud.' },
+      { when: 'Mar 2024', v: 73_000 },
+      { when: 'The last low', v: 45_000, said: 'Cycle top is in. Waiting for lower.' }, // PLACEHOLDER
+      { when: 'Now', v: 81_000 },
+    ],
+    verdict: 'Declared dead 400+ times. Priced higher after every one.',
   },
   {
+    key: 'sol',
     asset: 'SOL',
-    note: '“It’s going to zero”',
-    low: 50, // ← PLACEHOLDER: set the actual local low
-    now: 111,
-    series: [0.12, 0.08, 0.14, 0.11, 0.26, 0.2, 0.42, 0.36, 0.55, 0.62, 0.7, 0.85, 0.97],
+    tab: 'Solana',
+    points: [
+      { when: 'May 2020', v: 0.78 },
+      { when: 'Nov 2021', v: 260 },
+      { when: 'Dec 2022', v: 8, said: 'Solana is dead. It was just an FTX coin.' },
+      { when: 'Mar 2024', v: 200 },
+      { when: 'The last low', v: 50, said: 'Chain is over. Nobody is building.' }, // PLACEHOLDER
+      { when: 'Now', v: 111 },
+    ],
+    verdict: 'Written off at $8. Everyone who agreed is still sidelined.',
   },
   {
+    key: 'memes',
     asset: 'MEME VOL',
-    note: '“Memes are over”',
-    low: 40_000_000, // ← PLACEHOLDER
-    now: 1_600_000_000,
+    tab: 'Meme volume',
     format: 'perDay',
-    series: [0.06, 0.05, 0.09, 0.07, 0.16, 0.12, 0.3, 0.26, 0.52, 0.48, 0.74, 0.88, 1.0],
-  },
-  {
-    asset: 'NEW LAUNCHES',
-    note: '“Nobody is buying”',
-    low: 6_000, // ← PLACEHOLDER
-    now: 22_000,
-    format: 'perDay',
-    series: [0.1, 0.07, 0.13, 0.18, 0.15, 0.3, 0.27, 0.45, 0.6, 0.55, 0.8, 0.9, 0.96],
+    points: [
+      // PLACEHOLDER — pull real daily volume off DexScreener before launch.
+      { when: '2021', v: 900_000_000 },
+      { when: '2022', v: 30_000_000, said: 'Memecoins are a 2021 thing. It’s over.' },
+      { when: '2023', v: 180_000_000 },
+      { when: 'The lull', v: 40_000_000, said: 'Meta is dead. Nobody is buying memes.' },
+      { when: 'Now', v: 1_600_000_000 },
+    ],
+    verdict: 'Pronounced dead every lull. Back every time, without you.',
   },
 ];
 

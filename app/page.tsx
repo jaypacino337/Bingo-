@@ -1,7 +1,7 @@
 import { FinalCta } from '@/components/FinalCta';
 import { Footer } from '@/components/Footer';
 import { Hero } from '@/components/Hero';
-import { MarketBack } from '@/components/MarketBack';
+import { CycleTimeline } from '@/components/CycleTimeline';
 import { MissedMove } from '@/components/MissedMove';
 import { Nav } from '@/components/Nav';
 import { Receipts } from '@/components/Receipts';
@@ -16,7 +16,7 @@ export default function Page() {
       <main>
         <Hero />
         <Ticker />
-        <MarketBack />
+        <CycleTimeline />
         <MissedMove />
         <Receipts />
         <Thesis />
