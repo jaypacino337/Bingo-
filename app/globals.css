@@ -3,38 +3,88 @@
 @tailwind utilities;
 
 @layer base {
-  html { scroll-behavior: smooth; }
-  body {
-    @apply bg-white text-ink antialiased;
+  html {
+    scroll-behavior: smooth;
   }
-  ::selection { @apply bg-cash-300 text-ink; }
+
+  body {
+    @apply bg-night text-white antialiased;
+    /* Faint terminal grid, fixed so it reads as a backdrop rather than texture. */
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-up text-night;
+  }
 }
 
 @layer components {
   .label {
-    @apply font-mono text-[11px] uppercase tracking-label text-cash-600;
+    @apply font-mono text-[10px] uppercase tracking-label text-up;
   }
 
-  .h-display {
-    @apply text-[38px] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-[52px] lg:text-[64px];
+  .label-muted {
+    @apply font-mono text-[10px] uppercase tracking-label text-muted;
+  }
+
+  /* Section headings. Heavy, tight, all caps. */
+  .h-section {
+    @apply text-[30px] font-black uppercase leading-[0.96] tracking-tightest sm:text-[42px] lg:text-[52px];
+  }
+
+  .panel {
+    @apply rounded-2xl border border-line bg-panel;
+  }
+
+  /* Bordered card that lifts toward the accent on hover. */
+  .card {
+    @apply panel relative overflow-hidden transition-colors duration-300 hover:border-up/40;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink px-6 py-3.5
-           text-[14px] font-bold transition active:translate-y-[3px] active:shadow-none
-           disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[13px]
+           font-bold uppercase tracking-[0.08em] transition-all duration-200;
   }
-  .btn-primary { @apply btn bg-cash-400 text-ink shadow-lift hover:bg-cash-300 disabled:bg-cash-100; }
-  .btn-ghost   { @apply btn bg-white text-ink shadow-lift hover:bg-smoke; }
+
+  .btn-primary {
+    @apply btn bg-up text-night hover:bg-white
+           shadow-[0_0_0_0_rgba(25,251,123,0.4)] hover:shadow-[0_0_34px_-4px_rgba(25,251,123,0.65)];
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-transparent text-white hover:border-up/50 hover:text-up;
+  }
+
+  .num {
+    @apply font-mono tabular-nums;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Edge fade for the ticker and the receipt rails. */
+.fade-x {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 7%, black 93%, transparent);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
