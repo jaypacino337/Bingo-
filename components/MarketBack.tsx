@@ -2,6 +2,7 @@ import { ChartLine } from './ChartLine';
 import { Counter } from './Counter';
 import { Reveal } from './Reveal';
 import { asOf, marketBody, marketHeadline, marketStats } from '@/lib/content';
+import { formatValue, pctOffLow } from '@/lib/format';
 
 export function MarketBack() {
   return (
@@ -14,7 +15,9 @@ export function MarketBack() {
         </Reveal>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {marketStats.map((stat, i) => (
+          {marketStats.map((stat, i) => {
+            const offLows = pctOffLow(stat.low, stat.now);
+            return (
             <Reveal key={stat.asset} delay={i * 70}>
               <article className="card group h-full p-5">
                 {/* accent wash on hover */}
@@ -27,7 +30,7 @@ export function MarketBack() {
                       <p className="mt-1 text-[11px] leading-snug text-muted">{stat.note}</p>
                     </div>
                     <span className="num shrink-0 rounded-full bg-up/10 px-2.5 py-1 text-[11px] font-bold text-up">
-                      +<Counter to={stat.offLows} suffix="%" />
+                      +<Counter to={offLows} decimals={offLows < 100 ? 1 : 0} suffix="%" />
                     </span>
                   </div>
 
@@ -37,18 +40,21 @@ export function MarketBack() {
                     <div>
                       <p className="label-muted mb-1">Low</p>
                       <p className="num text-[13px] text-muted line-through decoration-line">
-                        {stat.low}
+                        {formatValue(stat.low, stat.format)}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="label-muted mb-1">Now</p>
-                      <p className="num text-[15px] font-bold">{stat.now}</p>
+                      <p className="num text-[15px] font-bold">
+                        {formatValue(stat.now, stat.format)}
+                      </p>
                     </div>
                   </div>
                 </div>
               </article>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
 
         <Reveal>

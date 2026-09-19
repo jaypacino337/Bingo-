@@ -1,6 +1,7 @@
 import { Counter } from './Counter';
 import { Reveal } from './Reveal';
 import { asOf, lowsBody, lowsFooter, lowsHeadline, lowsRows, lowsStake } from '@/lib/content';
+import { formatValue, multipleOf } from '@/lib/format';
 
 /**
  * The emotional centre of the page: the same $1,000, four decisions.
@@ -9,7 +10,7 @@ import { asOf, lowsBody, lowsFooter, lowsHeadline, lowsRows, lowsStake } from '@
  * as cards on mobile, because a four-column table on a phone is unreadable.
  */
 export function MissedMove() {
-  const best = Math.max(...lowsRows.map((r) => r.multiple));
+  const best = Math.max(...lowsRows.map((r) => multipleOf(r.entry, r.current)));
 
   return (
     <section id="lows" className="scroll-mt-20 border-y border-line bg-panel/40 py-20 lg:py-28">
@@ -44,8 +45,9 @@ export function MissedMove() {
               </thead>
               <tbody>
                 {lowsRows.map((row) => {
-                  const value = lowsStake * row.multiple;
-                  const isBest = row.multiple === best;
+                  const multiple = multipleOf(row.entry, row.current);
+                  const value = lowsStake * multiple;
+                  const isBest = multiple === best;
                   return (
                     <tr
                       key={row.asset}
@@ -56,9 +58,11 @@ export function MissedMove() {
                         <p className="mt-0.5 text-[11px] text-muted">{row.tag}</p>
                       </td>
                       <td className="num px-6 py-5 text-right text-[14px] text-muted">
-                        {row.entry}
+                        {formatValue(row.entry, row.format)}
                       </td>
-                      <td className="num px-6 py-5 text-right text-[14px]">{row.current}</td>
+                      <td className="num px-6 py-5 text-right text-[14px]">
+                        {formatValue(row.current, row.format)}
+                      </td>
                       <td className="px-6 py-5 text-right">
                         <span
                           className={`num text-[19px] font-black ${isBest ? 'text-up' : 'text-white'}`}
@@ -68,7 +72,7 @@ export function MissedMove() {
                       </td>
                       <td className="px-6 py-5 text-right">
                         <span className="num inline-block rounded-full bg-up/10 px-3 py-1.5 text-[12px] font-bold text-up">
-                          <Counter to={row.multiple} decimals={row.multiple < 10 ? 1 : 0} suffix="x" />
+                          <Counter to={multiple} decimals={multiple < 10 ? 1 : 0} suffix="x" />
                         </span>
                       </td>
                     </tr>
@@ -93,8 +97,9 @@ export function MissedMove() {
         {/* ------------------------------------------------------------- */}
         <div className="grid gap-3 md:hidden">
           {lowsRows.map((row, i) => {
-            const value = lowsStake * row.multiple;
-            const isBest = row.multiple === best;
+            const multiple = multipleOf(row.entry, row.current);
+            const value = lowsStake * multiple;
+            const isBest = multiple === best;
             return (
               <Reveal key={row.asset} delay={i * 60}>
                 <article className="card p-5">
@@ -104,14 +109,14 @@ export function MissedMove() {
                       <p className="mt-0.5 text-[11px] text-muted">{row.tag}</p>
                     </div>
                     <span className="num shrink-0 rounded-full bg-up/10 px-2.5 py-1 text-[11px] font-bold text-up">
-                      <Counter to={row.multiple} decimals={row.multiple < 10 ? 1 : 0} suffix="x" />
+                      <Counter to={multiple} decimals={multiple < 10 ? 1 : 0} suffix="x" />
                     </span>
                   </div>
 
                   <div className="mb-4 flex items-center gap-3 font-mono text-[12px]">
-                    <span className="text-muted">{row.entry}</span>
+                    <span className="text-muted">{formatValue(row.entry, row.format)}</span>
                     <span className="h-[1px] flex-1 bg-line" />
-                    <span>{row.current}</span>
+                    <span>{formatValue(row.current, row.format)}</span>
                   </div>
 
                   <div className="flex items-baseline justify-between border-t border-line pt-3.5">

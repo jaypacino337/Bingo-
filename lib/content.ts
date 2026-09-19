@@ -12,7 +12,14 @@
  * └─────────────────────────────────────────────────────────────────────┘
  */
 
-export const asOf = 'Placeholder data — update before launch';
+import type { ValueFormat } from './format';
+
+/**
+ * Shown under both data sections. While any number below is still a guess,
+ * leave this saying so — it is the only thing stopping the site from
+ * presenting invented figures as sourced.
+ */
+export const asOf = 'BTC / SOL live as of Sep 2026 · lows and meme figures are placeholders';
 
 // ---------------------------------------------------------------------------
 // Hero
@@ -50,10 +57,12 @@ export const ticker = [
 export interface MarketStat {
   asset: string;
   note: string;
-  low: string;
-  now: string;
-  /** Percent off the low. Drives the counter and the sparkline. */
-  offLows: number;
+  /** Value at the low. */
+  low: number;
+  /** Value now. */
+  now: number;
+  /** How low/now are rendered. */
+  format?: ValueFormat;
   /** 0-1 values, oldest first. Shape only — this draws the sparkline. */
   series: number[];
 }
@@ -66,33 +75,31 @@ export const marketStats: MarketStat[] = [
   {
     asset: 'BTC',
     note: 'Called dead at the lows',
-    low: '$0,000',
-    now: '$00,000',
-    offLows: 82,
+    low: 45_000, // ← PLACEHOLDER: set the actual local low
+    now: 81_000,
     series: [0.18, 0.1, 0.22, 0.16, 0.34, 0.29, 0.48, 0.44, 0.63, 0.58, 0.78, 0.86, 0.94],
   },
   {
     asset: 'SOL',
     note: '“It’s going to zero”',
-    low: '$00',
-    now: '$000',
-    offLows: 147,
+    low: 50, // ← PLACEHOLDER: set the actual local low
+    now: 111,
     series: [0.12, 0.08, 0.14, 0.11, 0.26, 0.2, 0.42, 0.36, 0.55, 0.62, 0.7, 0.85, 0.97],
   },
   {
     asset: 'MEME VOL',
     note: '“Memes are over”',
-    low: '$00M / day',
-    now: '$0.0B / day',
-    offLows: 310,
+    low: 40_000_000, // ← PLACEHOLDER
+    now: 1_600_000_000,
+    format: 'perDay',
     series: [0.06, 0.05, 0.09, 0.07, 0.16, 0.12, 0.3, 0.26, 0.52, 0.48, 0.74, 0.88, 1.0],
   },
   {
     asset: 'NEW LAUNCHES',
     note: '“Nobody is buying”',
-    low: '0k / day',
-    now: '00k / day',
-    offLows: 265,
+    low: 6_000, // ← PLACEHOLDER
+    now: 22_000,
+    format: 'perDay',
     series: [0.1, 0.07, 0.13, 0.18, 0.15, 0.3, 0.27, 0.45, 0.6, 0.55, 0.8, 0.9, 0.96],
   },
 ];
@@ -104,23 +111,26 @@ export const marketStats: MarketStat[] = [
 export interface LowsRow {
   asset: string;
   tag: string;
-  entry: string;
-  current: string;
-  /** Multiple on the money. 2.4 renders as 2.4x and $2,400. */
-  multiple: number;
+  /** Price you'd have paid at the low. */
+  entry: number;
+  /** Price now. The multiple and the dollar value derive from these two. */
+  current: number;
+  format?: ValueFormat;
 }
 
 export const lowsHeadline = '$1,000 looks different when you weren’t sidelined.';
 export const lowsBody =
   'Same thousand dollars. Different decision. The only variable was whether you clicked.';
 
+/** Entries and currents above; the multiple and the payout derive from them. */
+
 export const lowsStake = 1000;
 
 export const lowsRows: LowsRow[] = [
-  { asset: 'BTC', tag: 'Local low', entry: '$0,000', current: '$00,000', multiple: 1.8 },
-  { asset: 'SOL', tag: 'Local low', entry: '$00', current: '$000', multiple: 2.5 },
-  { asset: 'Meme runner', tag: 'Day one', entry: '$0.000', current: '$0.00', multiple: 14 },
-  { asset: 'The one you watched', tag: 'You didn’t buy', entry: '$0.0000', current: '$0.0', multiple: 42 },
+  { asset: 'BTC', tag: 'Local low', entry: 45_000, current: 81_000 },
+  { asset: 'SOL', tag: 'Local low', entry: 50, current: 111 },
+  { asset: 'Meme runner', tag: 'Day one', entry: 0.0008, current: 0.0112 },
+  { asset: 'The one you watched', tag: 'You didn’t buy', entry: 0.00004, current: 0.0017 },
 ];
 
 export const lowsFooter = 'Still sidelined?';
