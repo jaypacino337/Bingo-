@@ -25,8 +25,18 @@ export const metadata: Metadata = {
   title: { default: TITLE, template: '%s · SIDELINED' },
   description: DESCRIPTION,
   keywords: ['sidelined', 'memecoin', 'solana', 'pump.fun', 'bull market', 'crypto'],
-  openGraph: { title: TITLE, description: DESCRIPTION, type: 'website' },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    type: 'website',
+    images: [{ url: '/brand/banner.png', width: 2172, height: 724, alt: 'SIDELINED' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/brand/banner.png'],
+  },
 };
 
 export const viewport: Viewport = {

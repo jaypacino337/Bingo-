@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { buyUrl, shortMint, site } from '@/lib/site';
 
@@ -40,7 +41,13 @@ export function Nav() {
     >
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
         <a href="#top" className="flex shrink-0 items-center gap-2.5">
-          <Mark />
+          <Image
+            src="/brand/logo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full ring-1 ring-line"
+          />
           <span className="text-[15px] font-black uppercase tracking-tight">{site.name}</span>
         </a>
 
@@ -72,24 +79,5 @@ export function Nav() {
         </div>
       </nav>
     </header>
-  );
-}
-
-/** A line breaking out of a flat base — the whole story in 20px. */
-function Mark({ className = 'h-7 w-7' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
-      <rect width="48" height="48" rx="10" fill="#0D1112" />
-      <path
-        d="M6 34 L15 27 L22 30 L31 17 L38 21 L42 11"
-        fill="none"
-        stroke="#19FB7B"
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="42" cy="11" r="3.6" fill="#19FB7B" />
-      <rect x="6" y="39" width="36" height="2.6" rx="1.3" fill="#1E2627" />
-    </svg>
   );
 }

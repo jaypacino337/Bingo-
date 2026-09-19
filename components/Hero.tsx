@@ -1,8 +1,7 @@
-import { ChartLine } from './ChartLine';
-import { Counter } from './Counter';
+import Image from 'next/image';
 import { Reveal } from './Reveal';
-import { hero, marketStats } from '@/lib/content';
-import { buyUrl, site } from '@/lib/site';
+import { hero } from '@/lib/content';
+import { buyUrl } from '@/lib/site';
 
 export function Hero() {
   return (
@@ -14,8 +13,7 @@ export function Hero() {
                    animate-pulse-glow rounded-full bg-up/[0.13] blur-[120px]"
       />
 
-      <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-16 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16 lg:pb-24">
-        {/* ---------------------------------------------------------------- */}
+      <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24">
         <div>
           <Reveal>
             <p className="label mb-6 flex items-center gap-3">
@@ -57,25 +55,25 @@ export function Hero() {
           </Reveal>
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* The missed-move terminal                                          */}
-        {/* ---------------------------------------------------------------- */}
         <Reveal delay={200}>
-          <MissedMovePanel />
+          <HeroArt />
         </Reveal>
       </div>
     </section>
   );
 }
 
-/** A mock terminal panel: one big chart, a strip of movers underneath. */
-function MissedMovePanel() {
-  const feature = marketStats[0]!;
-  const rest = marketStats.slice(1, 4);
-
+/**
+ * The key art, framed as a terminal window.
+ *
+ * The illustration is already a porthole with someone watching the move from
+ * the wrong side of it, so wrapping it in window chrome and captioning it
+ * "your position: none" lets the picture carry the joke instead of a chart
+ * restating what section 01 is about to say anyway.
+ */
+function HeroArt() {
   return (
-    <div className="panel relative overflow-hidden shadow-[0_40px_120px_-40px_rgba(25,251,123,0.25)]">
-      {/* window chrome */}
+    <div className="panel relative overflow-hidden shadow-[0_40px_120px_-40px_rgba(25,251,123,0.3)]">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-line" />
@@ -91,40 +89,17 @@ function MissedMovePanel() {
         </span>
       </div>
 
-      {/* feature chart */}
-      <div className="px-5 pt-5">
-        <div className="mb-1 flex items-baseline justify-between">
-          <span className="text-[13px] font-bold uppercase tracking-wide">{feature.asset}</span>
-          <span className="num text-[13px] font-bold text-up">
-            +<Counter to={feature.offLows} suffix="%" />
-          </span>
-        </div>
-        <p className="label-muted mb-4">off the lows</p>
-        <ChartLine series={feature.series} height={132} strokeWidth={2.5} className="h-32 w-full" />
+      <div className="relative aspect-square">
+        <Image
+          src="/brand/logo.png"
+          alt="Watching the bull market through barred glass while everyone else celebrates"
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 46vw"
+          className="object-cover"
+        />
       </div>
 
-      {/* movers */}
-      <div className="grid grid-cols-3 divide-x divide-line border-t border-line">
-        {rest.map((stat) => (
-          <div key={stat.asset} className="px-3 py-4">
-            <p className="truncate font-mono text-[9.5px] uppercase tracking-label text-muted">
-              {stat.asset}
-            </p>
-            <p className="num mt-1 text-[15px] font-bold text-up">
-              +<Counter to={stat.offLows} suffix="%" />
-            </p>
-            <ChartLine
-              series={stat.series}
-              height={30}
-              strokeWidth={1.5}
-              showDot={false}
-              className="mt-2 h-7 w-full"
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* the punchline */}
       <div className="flex items-center justify-between gap-3 border-t border-line bg-night/60 px-5 py-3.5">
         <span className="font-mono text-[10px] uppercase tracking-label text-muted">
           your position
