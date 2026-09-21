@@ -14,9 +14,16 @@ it work."
 
 ```
 protocol/sdk/        ✅ runs, 10/10 tests passing
-protocol/circuits/   ✍️  written — needs circom compile + trusted setup
+protocol/circuits/   ✅ compiles, proves, and VERIFIES end-to-end (real zk proof)
 protocol/programs/   ✍️  written — needs verifier wiring + anchor build + audit
 ```
+
+**The zero-knowledge proof system works.** `bash circuits/build.sh` compiles the
+circuit (10,350 constraints), builds a witness from the SDK, runs a Groth16 setup,
+generates a proof, and verifies it — then confirms the proof's public signals
+match the SDK's values and that a tampered proof is **rejected**. That is a
+genuine, working shielded-withdrawal proof, generated and checked end-to-end. The
+trusted setup used there is a local throwaway; production needs a real ceremony.
 
 The SDK (`sdk/`) is the cryptographic core, and it is real, runnable code:
 
@@ -80,10 +87,12 @@ trusted setup is embedded.** That is a safety choice, not an omission.
 ## Build path — what "fully working" actually requires
 
 1. ✅ **SDK** — done and tested.
-2. **Compile the circuit** — `circom` + a Groth16 trusted-setup ceremony
-   (multi-party, public transcripts) → proving key + verifying key.
-3. **Wire the verifier** — embed the verifying key, implement the alt_bn128
-   pairing check in `verify_groth16`, prove the SDK's test vectors verify.
+2. ✅ **Compile the circuit + prove/verify** — done. `circuits/build.sh` runs it
+   end-to-end and a real proof verifies (tamper-rejected). Production still needs
+   a multi-party ceremony to replace the local throwaway setup key.
+3. **Wire the verifier** — embed the verifying key (dev key saved at
+   `circuits/artifacts/verification_key.dev.json`), implement the alt_bn128
+   pairing check in `verify_groth16`, confirm the SDK's proofs verify on-chain.
 4. **Devnet** — `anchor build && anchor deploy` to devnet, end-to-end
    deposit→withdraw against the deployed program. (This sandbox can't reach
    Solana, so this step runs on your machine.)

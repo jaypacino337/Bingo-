@@ -45,9 +45,27 @@ $SNARKJS groth16 prove "$BUILD/withdraw_final.zkey" "$BUILD/witness.wtns" \
 echo "==> 6/6  Verify"
 $SNARKJS groth16 verify "$BUILD/verification_key.json" "$BUILD/public.json" "$BUILD/proof.json"
 
+echo "==> check: proof's public signals match the SDK's expected values"
+node -e "
+const pub=require('./build/public.json'), exp=require('./expected.json');
+if (JSON.stringify(pub)!==JSON.stringify(exp)) { console.error('MISMATCH'); process.exit(1); }
+console.log('  match: OK');
+"
+
+echo "==> check: a tampered public signal is rejected"
+node -e "
+const fs=require('fs'), p=require('./build/public.json'), t=[...p];
+t[2]=(BigInt(t[2])+1n).toString(); fs.writeFileSync('build/public_tampered.json',JSON.stringify(t));
+"
+if $SNARKJS groth16 verify "$BUILD/verification_key.json" "$BUILD/public_tampered.json" "$BUILD/proof.json" 2>/dev/null; then
+  echo "  FAIL: tampered proof was accepted"; exit 1
+else
+  echo "  tampered proof rejected: OK"
+fi
+
+# Preserve the dev verifying key for wiring the on-chain verifier.
+mkdir -p artifacts
+cp "$BUILD/verification_key.json" artifacts/verification_key.dev.json
+
 echo
-echo "Public signals produced by the proof:"
-cat "$BUILD/public.json"
-echo
-echo "Public signals the SDK expected:"
-cat expected.json
+echo "ALL CHECKS PASSED — real zk proof generated, verified, and tamper-rejected."
