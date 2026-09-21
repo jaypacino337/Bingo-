@@ -1,0 +1,17 @@
+{
+  "name": "@zsol/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "zSOL protocol SDK — commitments, Merkle tree, nullifiers, withdrawal assembly.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "circomlibjs": "0.1.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
+  }
+}

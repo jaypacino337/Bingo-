@@ -17,3 +17,12 @@ coverage/
 pumpstreet/program/target/
 pumpstreet/art/out/
 out/
+
+# zSOL protocol SDK
+protocol/sdk/node_modules/
+protocol/sdk/package-lock.json
+protocol/circuits/*.r1cs
+protocol/circuits/*.wasm
+protocol/circuits/*_js/
+protocol/circuits/*.zkey
+protocol/programs/**/target/
