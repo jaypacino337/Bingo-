@@ -26,3 +26,6 @@ protocol/circuits/*.wasm
 protocol/circuits/*_js/
 protocol/circuits/*.zkey
 protocol/programs/**/target/
+protocol/circuits/input.json
+protocol/circuits/expected.json
+protocol/circuits/build/
