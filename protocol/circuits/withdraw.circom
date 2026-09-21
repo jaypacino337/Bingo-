@@ -30,17 +30,22 @@ template MerkleRoot(depth) {
     cur[0] <== leaf;
 
     component h[depth];
+    // Intermediate wires must be declared outside the loop body in circom.
+    signal left[depth];
+    signal right[depth];
+
     // Enforce each path bit is boolean, then hash in the correct order.
     for (var i = 0; i < depth; i++) {
         pathBits[i] * (pathBits[i] - 1) === 0;
 
-        h[i] = Poseidon(2);
         // left  = bit ? sibling : cur
         // right = bit ? cur     : sibling
-        signal left  <== (siblings[i] - cur[i]) * pathBits[i] + cur[i];
-        signal right <== (cur[i] - siblings[i]) * pathBits[i] + siblings[i];
-        h[i].inputs[0] <== left;
-        h[i].inputs[1] <== right;
+        left[i]  <== (siblings[i] - cur[i]) * pathBits[i] + cur[i];
+        right[i] <== (cur[i] - siblings[i]) * pathBits[i] + siblings[i];
+
+        h[i] = Poseidon(2);
+        h[i].inputs[0] <== left[i];
+        h[i].inputs[1] <== right[i];
         cur[i + 1] <== h[i].out;
     }
     root <== cur[depth];
