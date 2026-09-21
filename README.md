@@ -57,3 +57,17 @@ citation as long as the mechanism description stands.
 This repository previously held the SIDELINED landing page, replaced in full by
 zSOL. That work is intact in git history at commit `0a2da22` and can be restored
 with `git revert` on the replacement commit.
+
+## Turning on the waitlist
+
+The launch section has a working email form. To collect signups for real, do one
+two-minute step:
+
+1. Create a free form at **[formspree.io](https://formspree.io)** (or any endpoint
+   that accepts a `POST` with an `email` field).
+2. In `index.html`, find `WAITLIST_ENDPOINT = ""` near the bottom and paste your
+   form URL between the quotes.
+
+Until you set that, the form falls back to opening the visitor's email app
+addressed to `WAITLIST_FALLBACK_EMAIL` — change that constant to your real inbox
+so no signup is lost. Both values sit side by side in the one `<script>` block.

@@ -225,6 +225,20 @@
   .cta { text-align: center; display: flex; flex-direction: column; gap: 18px; align-items: center; }
   .cta .btn { font-family: "IBM Plex Mono", monospace; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; color: #fff; background: var(--grad); padding: 13px 24px; border-radius: 11px; font-weight: 600; box-shadow: 0 10px 26px -10px rgba(153,69,255,.6); }
   .cta .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wl-form { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 460px; }
+  .wl-input {
+    flex: 1 1 220px; min-width: 0; font: inherit; font-size: .95rem; padding: 13px 15px;
+    border-radius: 11px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+  }
+  .wl-input::placeholder { color: var(--ink-3); }
+  .wl-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .wl-btn { border: 0; cursor: pointer; flex: 0 0 auto; }
+  .wl-btn:disabled { opacity: .6; cursor: default; }
+  .wl-msg { font-family: "IBM Plex Mono", monospace; font-size: .82rem; margin: 0; }
+  .wl-msg.ok { color: var(--proven); }
+  .wl-msg.err { color: var(--flagged); }
+  .wl-spec { font-family: "IBM Plex Mono", monospace; font-size: .76rem; letter-spacing: .03em; color: var(--ink-3); text-decoration: none; margin-top: 4px; }
+  .wl-spec:hover { color: var(--accent-ink); }
 
   footer { border-top: 1px solid var(--rule); padding-block: 30px 46px; color: var(--ink-3); font-size: .85rem; }
   a { color: var(--accent-ink); }
@@ -423,11 +437,20 @@
       </div>
     </section>
 
-    <section>
+    <section id="waitlist">
       <div class="cta">
         <h2>Privacy, brought home.</h2>
-        <p style="color:var(--ink-2); text-align:center">Follow the build as the circuits, devnet program and audit come together.</p>
-        <a class="btn" href="#" id="cta-btn">Read the spec</a>
+        <p style="color:var(--ink-2); text-align:center; max-width:48ch">
+          Get on the list. We'll email you when the devnet pool opens and the audit lands —
+          no spam, no token presale, just the launch.
+        </p>
+        <form class="wl-form" id="wl-form" novalidate>
+          <input class="wl-input" id="wl-email" type="email" name="email" inputmode="email"
+                 autocomplete="email" placeholder="you@email.com" aria-label="Email address" required>
+          <button class="btn wl-btn" id="wl-btn" type="submit">Join the waitlist</button>
+        </form>
+        <p class="wl-msg" id="wl-msg" role="status" aria-live="polite" hidden></p>
+        <a class="wl-spec" href="DOCS.md">Read the protocol spec →</a>
       </div>
     </section>
   </div>
@@ -476,6 +499,59 @@
   btnMixer.addEventListener('click',function(){mode='mixer';render();});
   btnPool.addEventListener('click',function(){mode='pool';render();});
   render();
+})();
+
+/* ---- Waitlist ----
+   To turn this on: create a free form at https://formspree.io (or any endpoint
+   that accepts a POST with an `email` field) and paste its URL into
+   WAITLIST_ENDPOINT below. Until then, the form falls back to opening the
+   visitor's email client addressed to WAITLIST_FALLBACK_EMAIL. Replace that
+   with your real address. Both are the only two values to change. */
+(function () {
+  var WAITLIST_ENDPOINT = "";                       // e.g. "https://formspree.io/f/abcdwxyz"
+  var WAITLIST_FALLBACK_EMAIL = "hello@example.com"; // your inbox until the endpoint is set
+
+  var form = document.getElementById('wl-form');
+  var email = document.getElementById('wl-email');
+  var btn = document.getElementById('wl-btn');
+  var msg = document.getElementById('wl-msg');
+  if (!form) return;
+
+  function say(text, kind) {
+    msg.textContent = text;
+    msg.className = 'wl-msg ' + (kind || '');
+    msg.hidden = false;
+  }
+  function valid(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var value = (email.value || '').trim();
+    if (!valid(value)) { say('That email doesn’t look right — check it and try again.', 'err'); email.focus(); return; }
+
+    // No endpoint configured yet: hand off to the visitor's mail client so the
+    // signup is never silently lost.
+    if (!WAITLIST_ENDPOINT) {
+      say('Opening your email app to send your signup…', 'ok');
+      var subject = encodeURIComponent('zSOL waitlist');
+      var body = encodeURIComponent('Add me to the zSOL waitlist: ' + value);
+      window.location.href = 'mailto:' + WAITLIST_FALLBACK_EMAIL + '?subject=' + subject + '&body=' + body;
+      return;
+    }
+
+    btn.disabled = true;
+    say('Adding you…', '');
+    fetch(WAITLIST_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: value })
+    }).then(function (r) {
+      if (r.ok) { form.reset(); say('You’re on the list. We’ll email you at launch.', 'ok'); }
+      else { say('Something went wrong — try again in a moment.', 'err'); }
+    }).catch(function () {
+      say('Network hiccup — try again in a moment.', 'err');
+    }).then(function () { btn.disabled = false; });
+  });
 })();
 </script>
 </body>
