@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>zSOL</title>
-<meta name="description" content="Shielded SOL on Solana. Withdrawals carry a zero-knowledge proof that the funds aren't from a flagged deposit.">
+<meta name="description" content="Shielded SOL on Solana. Privacy proven on Zcash, brought to Solana — withdrawals carry a zero-knowledge proof that the funds aren't from a flagged deposit.">
 <meta property="og:title" content="zSOL">
-<meta property="og:description" content="Shielded SOL on Solana. Prove where your money didn't come from.">
+<meta property="og:description" content="Privacy came of age on Zcash. zSOL brings it to Solana — with proof of clean origin built in.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,156 +15,171 @@
 <style>
   :root {
     color-scheme: light dark;
-    --ground: #EDF0F3;
-    --surface: #F7F9FA;
-    --surface-2: #E3E8ED;
-    --ink: #0E1822;
-    --ink-2: #41505E;
-    --ink-3: #6D7C8A;
-    --rule: #CBD4DC;
-    --accent: #0C7C7C;
-    --accent-soft: #D6EAEA;
-    --accent-ink: #065353;
-    --proven: #1F7A54;
-    --proven-soft: #D5EADF;
-    --flagged: #A83A2E;
-    --flagged-soft: #F2DCD9;
-    --amber: #9A6B12;
-    --amber-soft: #F3E4C6;
-    --shadow: 0 1px 2px rgba(14, 24, 34, .06), 0 8px 24px -16px rgba(14, 24, 34, .28);
+    /* Neutrals — a faint violet bias so the white reads as chosen, not default */
+    --ground: #FBFAFD;
+    --surface: #FFFFFF;
+    --surface-2: #F2EFF8;
+    --ink: #16101F;
+    --ink-2: #4A4358;
+    --ink-3: #7C7488;
+    --rule: #E4DEF0;
+    /* Solana brand */
+    --sol-purple: #9945FF;
+    --sol-purple-ink: #6B21D6;
+    --sol-green: #14B87A;      /* darkened Solana green for text contrast on white */
+    --sol-green-soft: #D7F5E8;
+    --sol-purple-soft: #EEE3FF;
+    /* Zcash heritage accent */
+    --zcash-gold: #C88A16;
+    --zcash-gold-soft: #FBEFD3;
+    /* Semantic */
+    --accent: var(--sol-purple);
+    --accent-ink: var(--sol-purple-ink);
+    --accent-soft: var(--sol-purple-soft);
+    --proven: var(--sol-green);
+    --proven-soft: var(--sol-green-soft);
+    --flagged: #C43D2E;
+    --flagged-soft: #F7DED9;
+    --amber: var(--zcash-gold);
+    --amber-soft: var(--zcash-gold-soft);
+    --grad: linear-gradient(100deg, #9945FF 0%, #14F195 100%);
+    --grad-heritage: linear-gradient(100deg, #F4B728 0%, #9945FF 55%, #14F195 100%);
+    --shadow: 0 1px 2px rgba(22, 16, 31, .05), 0 12px 34px -20px rgba(90, 40, 180, .35);
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --ground: #0A121A;
-      --surface: #111C26;
-      --surface-2: #17242F;
-      --ink: #E6EDF2;
-      --ink-2: #A8B8C5;
-      --ink-3: #748694;
-      --rule: #24343F;
-      --accent: #46C4BE;
-      --accent-soft: #10312F;
-      --accent-ink: #8FDCD7;
-      --proven: #4CBF8B;
-      --proven-soft: #0F2C21;
-      --flagged: #E0776A;
-      --flagged-soft: #331915;
-      --amber: #D9A94E;
-      --amber-soft: #2E2413;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+      --ground: #0C0A14;
+      --surface: #14111E;
+      --surface-2: #1D1830;
+      --ink: #F0EBFA;
+      --ink-2: #B4AAC8;
+      --ink-3: #7E7591;
+      --rule: #2A2340;
+      --sol-purple: #B57BFF;
+      --sol-purple-ink: #C89BFF;
+      --sol-green: #14F195;
+      --sol-green-soft: #0E3327;
+      --sol-purple-soft: #241640;
+      --zcash-gold: #F4B728;
+      --zcash-gold-soft: #33280F;
+      --flagged: #E5796B;
+      --flagged-soft: #351A16;
+      --accent: var(--sol-purple);
+      --accent-ink: var(--sol-purple-ink);
+      --accent-soft: var(--sol-purple-soft);
+      --proven: var(--sol-green);
+      --proven-soft: var(--sol-green-soft);
+      --amber: var(--zcash-gold);
+      --amber-soft: var(--zcash-gold-soft);
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 34px -20px rgba(0,0,0,.85);
     }
   }
-
   :root[data-theme="dark"] {
-    --ground: #0A121A;
-    --surface: #111C26;
-    --surface-2: #17242F;
-    --ink: #E6EDF2;
-    --ink-2: #A8B8C5;
-    --ink-3: #748694;
-    --rule: #24343F;
-    --accent: #46C4BE;
-    --accent-soft: #10312F;
-    --accent-ink: #8FDCD7;
-    --proven: #4CBF8B;
-    --proven-soft: #0F2C21;
-    --flagged: #E0776A;
-    --flagged-soft: #331915;
-    --amber: #D9A94E;
-    --amber-soft: #2E2413;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -16px rgba(0, 0, 0, .8);
+    --ground: #0C0A14;
+    --surface: #14111E;
+    --surface-2: #1D1830;
+    --ink: #F0EBFA;
+    --ink-2: #B4AAC8;
+    --ink-3: #7E7591;
+    --rule: #2A2340;
+    --sol-purple: #B57BFF;
+    --sol-purple-ink: #C89BFF;
+    --sol-green: #14F195;
+    --sol-green-soft: #0E3327;
+    --sol-purple-soft: #241640;
+    --zcash-gold: #F4B728;
+    --zcash-gold-soft: #33280F;
+    --flagged: #E5796B;
+    --flagged-soft: #351A16;
+    --accent: var(--sol-purple);
+    --accent-ink: var(--sol-purple-ink);
+    --accent-soft: var(--sol-purple-soft);
+    --proven: var(--sol-green);
+    --proven-soft: var(--sol-green-soft);
+    --amber: var(--zcash-gold);
+    --amber-soft: var(--zcash-gold-soft);
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 34px -20px rgba(0,0,0,.85);
   }
 
   * { box-sizing: border-box; }
   html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-
   body {
-    background: var(--ground);
-    color: var(--ink);
+    background: var(--ground); color: var(--ink);
     font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    margin: 0;
-    -webkit-font-smoothing: antialiased;
+    font-size: 16px; line-height: 1.6; margin: 0; -webkit-font-smoothing: antialiased;
   }
-
   img { max-width: 100%; }
-  [hidden] { display: none !important; }
 
-  .wrap { max-width: 860px; margin: 0 auto; padding-inline: 20px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding-inline: 20px; }
 
-  h1, h2, h3 {
-    font-family: Fraunces, Georgia, serif;
-    text-wrap: balance; line-height: 1.12; margin: 0; font-weight: 600;
-  }
-  h1 { font-size: clamp(2.4rem, 7vw, 4rem); letter-spacing: -.02em; }
-  h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: -.015em; }
+  h1,h2,h3 { font-family: Fraunces, Georgia, serif; text-wrap: balance; line-height: 1.1; margin: 0; font-weight: 600; }
+  h1 { font-size: clamp(2.5rem, 7.5vw, 4.3rem); letter-spacing: -.025em; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.15rem); letter-spacing: -.015em; }
   h3 { font-size: 1.1rem; font-weight: 600; }
   p { margin: 0; max-width: 62ch; }
 
   .eyebrow {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: .72rem; text-transform: uppercase; letter-spacing: .16em;
-    color: var(--ink-3); margin: 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .72rem;
+    text-transform: uppercase; letter-spacing: .16em; color: var(--ink-3); margin: 0;
   }
-  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .grad-text {
+    background: var(--grad); -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
 
+  /* masthead */
   header.bar {
-    border-bottom: 1px solid var(--rule);
-    position: sticky; top: env(safe-area-inset-top, 0px);
-    background: color-mix(in srgb, var(--ground) 88%, transparent);
-    backdrop-filter: blur(10px); z-index: 20;
+    border-bottom: 1px solid var(--rule); position: sticky; top: env(safe-area-inset-top, 0px);
+    background: color-mix(in srgb, var(--ground) 86%, transparent); backdrop-filter: blur(12px); z-index: 20;
   }
   .bar-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.15rem; }
-  .brand svg { display: block; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 1.2rem; }
+  .brand .mark { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: grid; place-items: center; box-shadow: 0 4px 14px -4px rgba(153,69,255,.6); }
+  .brand .mark svg { display: block; }
   .status-pill {
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem; letter-spacing: .1em;
-    text-transform: uppercase; padding: 5px 10px; border-radius: 999px;
-    background: var(--amber-soft); color: var(--amber);
-    border: 1px solid color-mix(in srgb, var(--amber) 32%, transparent); white-space: nowrap;
+    font-family: "IBM Plex Mono", monospace; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px; background: var(--amber-soft); color: var(--amber);
+    border: 1px solid color-mix(in srgb, var(--amber) 34%, transparent); white-space: nowrap;
   }
 
-  .hero { padding-block: clamp(44px, 8vw, 80px) 28px; }
-  .lede { font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--ink-2); margin-top: 20px; }
-  .kicker { color: var(--accent); font-style: italic; }
+  /* hero */
+  .hero { padding-block: clamp(50px, 9vw, 92px) 30px; position: relative; }
+  .hero-glow {
+    position: absolute; inset: -10% -20% auto -20%; height: 340px; z-index: -1;
+    background: radial-gradient(60% 100% at 30% 0%, rgba(153,69,255,.16), transparent 70%),
+                radial-gradient(50% 100% at 85% 10%, rgba(20,241,149,.14), transparent 70%);
+    filter: blur(6px); pointer-events: none;
+  }
+  .heritage {
+    display: inline-flex; align-items: center; gap: 9px; font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem; letter-spacing: .04em; color: var(--ink-2);
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 999px;
+    padding: 6px 13px; box-shadow: var(--shadow); margin-bottom: 22px;
+  }
+  .heritage b { color: var(--zcash-gold); font-weight: 600; }
+  .heritage .to { color: var(--ink-3); }
+  .heritage .s { font-weight: 600; background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .lede { font-size: clamp(1.08rem, 2.4vw, 1.28rem); color: var(--ink-2); margin-top: 22px; }
+  .kicker { font-style: italic; }
 
-  .flow {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    margin-top: 26px; font-family: "IBM Plex Mono", monospace; font-size: .86rem;
-  }
-  .chip {
-    padding: 7px 12px; border-radius: 7px; border: 1px solid var(--rule);
-    background: var(--surface); color: var(--ink-2);
-  }
-  .chip.z { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 28px; font-family: "IBM Plex Mono", monospace; font-size: .84rem; }
+  .chip { padding: 8px 13px; border-radius: 8px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); }
+  .chip.z { border: 0; background: var(--grad); color: #fff; font-weight: 600; box-shadow: 0 6px 18px -6px rgba(153,69,255,.55); }
   .arrow { color: var(--ink-3); }
 
-  .demo {
-    background: var(--surface); border: 1px solid var(--rule); border-radius: 14px;
-    box-shadow: var(--shadow); margin-block: 36px; overflow: hidden;
-  }
-  .demo-head {
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
-    padding: 16px 18px; border-bottom: 1px solid var(--rule); background: var(--surface-2);
-  }
-  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
-  .seg button {
-    font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .04em;
-    padding: 8px 13px; border: 0; background: transparent; color: var(--ink-2);
-    cursor: pointer; transition: background .16s, color .16s;
-  }
-  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--ground); }
+  /* demo */
+  .demo { background: var(--surface); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow); margin-block: 40px; overflow: hidden; }
+  .demo-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--rule); }
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 9px; overflow: hidden; background: var(--ground); }
+  .seg button { font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .04em; padding: 8px 14px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; transition: .16s; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   .pool { padding: 22px 18px 18px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17px, 1fr)); gap: 6px; margin-bottom: 18px; }
-  .node {
-    aspect-ratio: 1; max-width: 100%; border-radius: 3px; background: var(--surface-2);
-    border: 1px solid var(--rule); transition: background .3s, border-color .3s, opacity .3s, transform .3s;
-  }
-  .node.mine { background: var(--accent); border-color: var(--accent); transform: scale(1.18); }
+  .node { aspect-ratio: 1; max-width: 100%; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--rule); transition: background .3s, border-color .3s, opacity .3s, transform .3s; }
+  .node.mine { background: var(--accent); border-color: var(--accent); transform: scale(1.2); box-shadow: 0 0 0 3px var(--accent-soft); }
   .node.included { background: var(--proven-soft); border-color: var(--proven); }
   .node.flagged { background: var(--flagged-soft); border-color: var(--flagged); }
   .node.excluded { opacity: .22; }
@@ -174,39 +189,32 @@
   .legend span { display: inline-flex; align-items: center; gap: 7px; }
   .swatch { width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--rule); flex: none; }
 
-  .readout {
-    border-top: 1px solid var(--rule); padding: 16px 18px; background: var(--surface-2);
-    font-family: "IBM Plex Mono", monospace; font-size: .82rem; line-height: 1.75;
-  }
+  .readout { border-top: 1px solid var(--rule); padding: 16px 18px; background: var(--surface-2); font-family: "IBM Plex Mono", monospace; font-size: .82rem; line-height: 1.75; }
   .readout .row { display: flex; gap: 10px; flex-wrap: wrap; }
   .readout .k { color: var(--ink-3); min-width: 128px; }
   .verdict { font-weight: 600; }
   .verdict.ok { color: var(--proven); }
   .verdict.no { color: var(--flagged); }
 
-  section { padding-block: clamp(36px, 6vw, 56px); border-top: 1px solid var(--rule); }
+  section { padding-block: clamp(38px, 6vw, 58px); border-top: 1px solid var(--rule); }
   .stack { display: flex; flex-direction: column; gap: 18px; }
   .stack-lg { display: flex; flex-direction: column; gap: 30px; }
 
   ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 22px; }
-  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start; }
-  ol.steps li::before {
-    content: counter(s, decimal-leading-zero);
-    font-family: "IBM Plex Mono", monospace; font-size: .78rem; color: var(--accent);
-    border: 1px solid var(--accent); border-radius: 6px; padding: 4px 0; text-align: center;
-    background: var(--accent-soft);
-  }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; gap: 16px; align-items: start; }
+  ol.steps li::before { content: counter(s, decimal-leading-zero); font-family: "IBM Plex Mono", monospace; font-size: .78rem; color: #fff; border-radius: 8px; padding: 5px 0; text-align: center; background: var(--grad); font-weight: 600; }
   ol.steps p { color: var(--ink-2); margin-top: 5px; font-size: .95rem; }
 
   .compare { width: 100%; border-collapse: collapse; font-size: .92rem; }
   .compare th, .compare td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .compare thead th { font-family: "IBM Plex Mono", monospace; font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); font-weight: 500; }
+  .compare thead th:last-child { color: var(--accent-ink); }
   .compare td:first-child { color: var(--ink-2); width: 34%; }
   .compare .yes { color: var(--proven); font-weight: 500; }
   .compare .no { color: var(--flagged); font-weight: 500; }
   .tscroll { overflow-x: auto; }
 
-  .note { border-left: 3px solid var(--amber); background: var(--amber-soft); padding: 16px 18px; border-radius: 0 8px 8px 0; }
+  .note { border-left: 3px solid var(--amber); background: var(--amber-soft); padding: 16px 18px; border-radius: 0 10px 10px 0; }
   .note p { color: var(--ink); font-size: .93rem; }
   .note strong { font-weight: 600; }
 
@@ -214,7 +222,11 @@
   dl.faq dt { font-weight: 600; margin-bottom: 6px; }
   dl.faq dd { margin: 0; color: var(--ink-2); font-size: .95rem; }
 
-  footer { border-top: 1px solid var(--rule); padding-block: 30px 44px; color: var(--ink-3); font-size: .85rem; }
+  .cta { text-align: center; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+  .cta .btn { font-family: "IBM Plex Mono", monospace; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; color: #fff; background: var(--grad); padding: 13px 24px; border-radius: 11px; font-weight: 600; box-shadow: 0 10px 26px -10px rgba(153,69,255,.6); }
+  .cta .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  footer { border-top: 1px solid var(--rule); padding-block: 30px 46px; color: var(--ink-3); font-size: .85rem; }
   a { color: var(--accent-ink); }
   a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -222,7 +234,7 @@
   .phase { display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding-block: 14px; border-bottom: 1px solid var(--rule); align-items: baseline; }
   .phase:last-child { border-bottom: 0; }
   .phase .tag { font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
-  .phase .tag.now { color: var(--accent); }
+  .phase .tag.now { color: var(--accent-ink); }
   .phase .tag.next { color: var(--ink-3); }
   .phase h3 { font-family: "IBM Plex Sans", sans-serif; font-size: .98rem; }
   .phase p { color: var(--ink-2); font-size: .9rem; margin-top: 3px; }
@@ -238,11 +250,12 @@
 <header class="bar">
   <div class="wrap bar-in">
     <div class="brand">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-        <circle cx="11" cy="11" r="9.2" fill="none" stroke="var(--accent)" stroke-width="1.6"></circle>
-        <circle cx="11" cy="11" r="4.6" fill="var(--accent)" opacity=".28"></circle>
-        <circle cx="11" cy="11" r="1.9" fill="var(--accent)"></circle>
-      </svg>
+      <span class="mark">
+        <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
+          <circle cx="7.5" cy="7.5" r="6" fill="none" stroke="#fff" stroke-width="1.4"></circle>
+          <circle cx="7.5" cy="7.5" r="2.4" fill="#fff"></circle>
+        </svg>
+      </span>
       zSOL
     </div>
     <span class="status-pill">Protocol design · not deployed</span>
@@ -252,16 +265,14 @@
 <main>
   <div class="wrap">
     <div class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <span class="heritage"><b>Zcash</b> <span class="to">proved private money works</span> · <span class="s">now on Solana</span></span>
       <p class="eyebrow">Shielded SOL · association-set privacy</p>
-      <h1 style="margin-top:14px">Prove where your money <span class="kicker">didn't</span> come from.</h1>
+      <h1 style="margin-top:14px">Prove where your money <span class="kicker grad-text">didn't</span> come from.</h1>
       <p class="lede">
-        Deposit SOL, hold zSOL, withdraw to a fresh address. Your transaction graph stays
-        private — and unlike a mixer, your withdrawal carries a zero-knowledge proof that
-        your deposit is <em>not</em> one of the flagged ones.
-      </p>
-      <p class="lede" style="margin-top:14px">
-        Same privacy. The one thing you give up is the ability to hide in a crowd you
-        shouldn't be in.
+        Zcash showed the world you can move money privately. zSOL brings that to Solana —
+        with one upgrade: your withdrawal carries a zero-knowledge proof that your deposit is
+        <em>not</em> one of the flagged ones. Private, and provably clean.
       </p>
       <div class="flow">
         <span class="chip">1 SOL</span>
@@ -285,7 +296,7 @@
         <div class="legend">
           <span><i class="swatch" style="background:var(--accent);border-color:var(--accent)"></i> Your deposit</span>
           <span><i class="swatch" style="background:var(--proven-soft);border-color:var(--proven)"></i> In your association set</span>
-          <span><i class="swatch" style="background:var(--flagged-soft);border-color:var(--flagged)"></i> Flagged by the set provider</span>
+          <span><i class="swatch" style="background:var(--flagged-soft);border-color:var(--flagged)"></i> Flagged deposit</span>
           <span><i class="swatch" style="opacity:.22"></i> Outside your set</span>
         </div>
       </div>
@@ -294,8 +305,8 @@
 
     <div class="note" style="margin-bottom:8px">
       <p><strong>Status, plainly:</strong> this page describes a protocol design based on
-      published research. There is no deployed contract, no audit, and no token. Nothing
-      here is live, and no figure on this page is a real on-chain measurement.</p>
+      published research. There is no deployed contract, no audit, and no token. Nothing here
+      is live, and no figure on this page is a real on-chain measurement.</p>
     </div>
   </div>
 
@@ -303,33 +314,44 @@
     <section>
       <div class="stack-lg">
         <div class="stack">
+          <p class="eyebrow">The lineage</p>
+          <h2>Privacy grew up on Zcash. It belongs on Solana too.</h2>
+        </div>
+        <p style="color:var(--ink-2)">
+          Zcash spent a decade proving that shielded transactions are safe, sound, and
+          practical — real cryptography, not a promise. But Zcash privacy is all-or-nothing:
+          once funds are shielded, no one can tell the honest from the stolen, and that is
+          exactly what gets private money delisted.
+        </p>
+        <p style="color:var(--ink-2)">
+          zSOL takes Zcash's proven shielding and adds the missing half — <strong>proof of
+          clean origin</strong> — then runs it where fees are cheap and blocks are fast enough
+          for the anonymity set to actually grow. Same privacy heritage; a home built for it.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="stack-lg">
+        <div class="stack">
           <p class="eyebrow">Mechanism</p>
           <h2>How a withdrawal works</h2>
         </div>
         <ol class="steps">
-          <li><div>
-            <h3>Deposit SOL, mint zSOL</h3>
-            <p>You send SOL and publish a commitment — a hash of a secret only you hold.
-            The deposit is public, like any Solana transaction. Nothing is hidden yet.</p>
-          </div></li>
-          <li><div>
-            <h3>Choose your association set</h3>
-            <p>A set is a published list of deposits somebody is willing to vouch for. You
-            pick which one to prove membership in. A broad set gives a larger anonymity
-            crowd; a conservative one gives a stronger claim.</p>
-          </div></li>
-          <li><div>
-            <h3>Withdraw with a proof</h3>
-            <p>You withdraw to a fresh address and publish a zero-knowledge proof of two
-            things: you know the secret behind <em>some</em> commitment in that set, and it
-            hasn't been spent. Which deposit is yours stays private.</p>
-          </div></li>
-          <li><div>
-            <h3>The nullifier closes it</h3>
-            <p>Each withdrawal reveals a one-way nullifier derived from your secret. It
-            proves this deposit was never withdrawn before without revealing which deposit
-            it is. Double-spending is impossible; linking is not.</p>
-          </div></li>
+          <li><div><h3>Deposit SOL, mint zSOL</h3>
+            <p>You send SOL and publish a commitment — a hash of a secret only you hold. The
+            deposit is public, like any Solana transaction. Nothing is hidden yet.</p></div></li>
+          <li><div><h3>Choose your association set</h3>
+            <p>A set is a published list of deposits somebody vouches for. Pick a broad set for
+            a bigger anonymity crowd, a conservative one for a stronger claim.</p></div></li>
+          <li><div><h3>Withdraw with a proof</h3>
+            <p>You withdraw to a fresh address and publish a zero-knowledge proof: you know the
+            secret behind <em>some</em> commitment in that set, and it hasn't been spent. Which
+            deposit is yours stays private.</p></div></li>
+          <li><div><h3>The nullifier closes it</h3>
+            <p>Each withdrawal reveals a one-way nullifier from your secret — proving this
+            deposit was never withdrawn before without revealing which one it is.
+            Double-spending is impossible; linking is not.</p></div></li>
         </ol>
       </div>
     </section>
@@ -339,7 +361,7 @@
         <div class="stack">
           <p class="eyebrow">The distinction</p>
           <h2>Why zSOL isn't a mixer</h2>
-          <p style="color:var(--ink-2)">The difference isn't the cryptography — it's what the protocol lets you assert.</p>
+          <p style="color:var(--ink-2)">The difference isn't the cryptography — it's what the protocol lets you prove.</p>
         </div>
         <div class="tscroll">
           <table class="compare">
@@ -348,46 +370,16 @@
               <tr><td>Hides your transaction graph</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
               <tr><td>Lets you prove funds aren't from a hack</td><td class="no">No — impossible by design</td><td class="yes">Yes, in zero knowledge</td></tr>
               <tr><td>Honest users separable from stolen funds</td><td class="no">No</td><td class="yes">Yes, by association set</td></tr>
-              <tr><td>An exchange can accept the withdrawal</td><td class="no">Typically refused outright</td><td class="yes">The proof is the evidence</td></tr>
+              <tr><td>An exchange can accept the withdrawal</td><td class="no">Typically refused</td><td class="yes">The proof is the evidence</td></tr>
               <tr><td>Value to someone laundering a hack</td><td class="no">High — that's the problem</td><td class="yes">None. They can't produce the proof</td></tr>
             </tbody>
           </table>
         </div>
         <p style="color:var(--ink-2);font-size:.93rem">
-          The last row is the whole design. A thief can deposit — nobody can stop that —
-          but no honest set will include their commitment, so they can never withdraw with
-          a proof anyone accepts. Privacy stops being a shield for them and stays one for
-          everyone else.
+          The last row is the whole design. A thief can deposit — nobody can stop that — but no
+          honest set will include their commitment, so they can never withdraw with a proof
+          anyone accepts. Privacy stops being a shield for them and stays one for everyone else.
         </p>
-      </div>
-    </section>
-
-    <section>
-      <div class="stack-lg">
-        <div class="stack">
-          <p class="eyebrow">Association sets</p>
-          <h2>Who decides what's flagged</h2>
-        </div>
-        <div class="stack">
-          <p style="color:var(--ink-2)">
-            Nobody, centrally — and this is the part most worth getting right. A set is
-            just a signed list of deposit commitments. Anyone can publish one, and users
-            choose which to prove against. Competing providers with different standards can
-            coexist: a conservative set excludes anything within a few hops of a known hack;
-            a permissive one excludes only direct, adjudicated theft.
-          </p>
-          <p style="color:var(--ink-2)">
-            The protocol itself takes no position. It verifies a proof about a set you
-            named. That keeps the censorship decision outside the contract, where it can be
-            argued with, forked, or ignored — rather than frozen into code nobody can amend.
-          </p>
-        </div>
-        <div class="note">
-          <p><strong>The honest tradeoff:</strong> if every exchange converges on one
-          provider's set, that provider becomes a de facto gatekeeper. Association sets move
-          the trust problem; they don't erase it. Any serious deployment has to plan for set
-          diversity, or it recreates the thing it was built to avoid.</p>
-        </div>
       </div>
     </section>
 
@@ -398,30 +390,14 @@
           <h2>Roadmap</h2>
         </div>
         <div class="roadmap">
-          <div class="phase">
-            <span class="tag now">Now</span>
-            <div><h3>Protocol specification</h3>
-            <p>Circuit design, commitment and nullifier scheme, association-set format.
-            Public, reviewable, unimplemented.</p></div>
-          </div>
-          <div class="phase">
-            <span class="tag next">Next</span>
-            <div><h3>Reference circuits and devnet program</h3>
-            <p>Groth16 circuits for membership and exclusion, an Anchor program on devnet,
-            and a published test vector set.</p></div>
-          </div>
-          <div class="phase">
-            <span class="tag next">Then</span>
-            <div><h3>Independent audit and trusted setup</h3>
-            <p>Circuit audit plus a multi-party trusted-setup ceremony with public
-            transcripts. No mainnet deployment before both are complete.</p></div>
-          </div>
-          <div class="phase">
-            <span class="tag next">Later</span>
-            <div><h3>Set provider ecosystem</h3>
-            <p>Tooling so more than one organisation publishes association sets, so the
-            gatekeeping risk above stays hypothetical.</p></div>
-          </div>
+          <div class="phase"><span class="tag now">Now</span><div><h3>Protocol specification</h3>
+            <p>Circuit design, commitment and nullifier scheme, association-set format. Public, reviewable, unimplemented.</p></div></div>
+          <div class="phase"><span class="tag next">Next</span><div><h3>Reference circuits and devnet program</h3>
+            <p>Groth16 circuits for membership and exclusion, an Anchor program on devnet, and published test vectors.</p></div></div>
+          <div class="phase"><span class="tag next">Then</span><div><h3>Independent audit and trusted setup</h3>
+            <p>Circuit audit plus a multi-party trusted-setup ceremony with public transcripts. No mainnet before both.</p></div></div>
+          <div class="phase"><span class="tag next">Later</span><div><h3>Set-provider ecosystem</h3>
+            <p>Tooling so more than one organisation publishes association sets, so no single party becomes the gatekeeper.</p></div></div>
         </div>
       </div>
     </section>
@@ -433,38 +409,25 @@
           <h2>Straight answers</h2>
         </div>
         <dl class="faq">
-          <div>
-            <dt>Can zSOL be used to launder money?</dt>
-            <dd>Not usefully. Laundering requires the output to be accepted somewhere, and
-            the only thing that makes a withdrawal acceptable here is a proof of exclusion
-            the launderer cannot produce. A pool with no proof attached is just a mixer, and
-            that isn't what this is.</dd>
-          </div>
-          <div>
-            <dt>Does the protocol ever see my identity?</dt>
-            <dd>No. The contract verifies arithmetic over commitments. It never learns an
-            address linkage, and there is no off-chain account, KYC step, or operator with a
-            view of the mapping.</dd>
-          </div>
-          <div>
-            <dt>What if I'm excluded from every set unfairly?</dt>
-            <dd>You keep your funds — the deposit is always withdrawable to the original
-            depositor without a set proof. What you lose is the anonymity, not the money.
-            That's a deliberate floor: no set provider can strand a user's SOL.</dd>
-          </div>
-          <div>
-            <dt>Why Solana?</dt>
-            <dd>Proof verification is the expensive step, and it happens on every
-            withdrawal. Cheap, fast execution is what decides whether the anonymity set
-            grows large enough to be worth anything.</dd>
-          </div>
-          <div>
-            <dt>Is zSOL a token I can trade?</dt>
-            <dd>It's a claim on deposited SOL inside the pool, not a speculative asset.
-            There's no separate governance token and no reason for one — a verifier contract
-            doesn't need an asset to function.</dd>
-          </div>
+          <div><dt>Can zSOL be used to launder money?</dt>
+            <dd>Not usefully. Laundering needs the output accepted somewhere, and the only thing that makes a withdrawal acceptable here is a proof of exclusion the launderer cannot produce. A pool with no proof attached is just a mixer, and that isn't what this is.</dd></div>
+          <div><dt>Does the protocol ever see my identity?</dt>
+            <dd>No. The contract verifies arithmetic over commitments. It never learns an address linkage, and there's no off-chain account, KYC step, or operator with a view of the mapping.</dd></div>
+          <div><dt>What if I'm excluded from every set unfairly?</dt>
+            <dd>You keep your funds — the deposit is always withdrawable to the original depositor without a set proof. You lose the anonymity, not the money. No set provider can strand your SOL.</dd></div>
+          <div><dt>Why Solana and not just Zcash?</dt>
+            <dd>Zcash proved the cryptography; its privacy is all-or-nothing and can't prove clean origin. Solana's cheap, fast blocks let the anonymity set grow and let a proof be verified on every withdrawal without punishing fees.</dd></div>
+          <div><dt>Is zSOL a token I can trade?</dt>
+            <dd>It's a claim on deposited SOL inside the pool, not a speculative asset. No separate governance token, and no reason for one — a verifier contract doesn't need one to function.</dd></div>
         </dl>
+      </div>
+    </section>
+
+    <section>
+      <div class="cta">
+        <h2>Privacy, brought home.</h2>
+        <p style="color:var(--ink-2); text-align:center">Follow the build as the circuits, devnet program and audit come together.</p>
+        <a class="btn" href="#" id="cta-btn">Read the spec</a>
       </div>
     </section>
   </div>
@@ -474,8 +437,8 @@
       <p style="max-width:60ch">
         The association-set construction here follows
         <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4563364" target="_blank" rel="noopener">Blockchain
-        Privacy and Regulatory Compliance: Towards a Practical Equilibrium</a> (Buterin,
-        Illum, Nadler, Schär, Soleimani, 2023).
+        Privacy and Regulatory Compliance: Towards a Practical Equilibrium</a> (Buterin, Illum,
+        Nadler, Schär, Soleimani, 2023). Shielding heritage: the Zcash protocol.
       </p>
       <p style="margin-top:14px;max-width:60ch">
         Not deployed. Not audited. Nothing on this page is financial or legal advice, and no
@@ -488,73 +451,30 @@
 <script>
 (function () {
   var TOTAL = 132, MINE = 47, flagged = {}, inSet = {};
+  (function () { var s = 20260918; function r(){s=(s*1664525+1013904223)%4294967296;return s/4294967296;} var n=0; while(n<14){var i=Math.floor(r()*TOTAL); if(i!==MINE&&!flagged[i]){flagged[i]=true;n++;}} })();
+  (function () { var s = 777; function r(){s=(s*1103515245+12345)%2147483648;return s/2147483648;} var n=0; while(n<58){var i=Math.floor(r()*TOTAL); if(!flagged[i]&&!inSet[i]){inSet[i]=true;n++;}} inSet[MINE]=true; })();
 
-  (function () {
-    var s = 20260918;
-    function rnd() { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }
-    var n = 0;
-    while (n < 14) { var i = Math.floor(rnd() * TOTAL); if (i !== MINE && !flagged[i]) { flagged[i] = true; n++; } }
-  })();
-
-  (function () {
-    var s = 777;
-    function rnd() { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }
-    var n = 0;
-    while (n < 58) { var i = Math.floor(rnd() * TOTAL); if (!flagged[i] && !inSet[i]) { inSet[i] = true; n++; } }
-    inSet[MINE] = true;
-  })();
-
-  var grid = document.getElementById('grid');
-  var readout = document.getElementById('readout');
-  var btnMixer = document.getElementById('btn-mixer');
-  var btnPool = document.getElementById('btn-pool');
-  var mode = 'pool', nodes = [];
-
-  for (var i = 0; i < TOTAL; i++) {
-    var d = document.createElement('div');
-    d.className = 'node';
-    grid.appendChild(d);
-    nodes.push(d);
-  }
-
-  function setSize() { var n = 0; for (var k in inSet) if (inSet[k]) n++; return n; }
-
-  function render() {
-    for (var i = 0; i < TOTAL; i++) {
-      var c = 'node';
-      if (mode === 'mixer') {
-        if (i === MINE) c += ' mine';
-      } else {
-        if (i === MINE) c += ' mine';
-        else if (flagged[i]) c += ' flagged excluded';
-        else if (inSet[i]) c += ' included';
-        else c += ' excluded';
-      }
-      nodes[i].className = c;
+  var grid=document.getElementById('grid'), readout=document.getElementById('readout');
+  var btnMixer=document.getElementById('btn-mixer'), btnPool=document.getElementById('btn-pool');
+  var mode='pool', nodes=[];
+  for (var i=0;i<TOTAL;i++){var d=document.createElement('div');d.className='node';grid.appendChild(d);nodes.push(d);}
+  function setSize(){var n=0;for(var k in inSet)if(inSet[k])n++;return n;}
+  function render(){
+    for(var i=0;i<TOTAL;i++){var c='node';
+      if(mode==='mixer'){ if(i===MINE)c+=' mine'; }
+      else{ if(i===MINE)c+=' mine'; else if(flagged[i])c+=' flagged excluded'; else if(inSet[i])c+=' included'; else c+=' excluded'; }
+      nodes[i].className=c;
     }
-
-    var rows = mode === 'mixer'
-      ? [['anonymity set', TOTAL + ' deposits'],
-         ['flagged inside', '14 deposits — indistinguishable'],
-         ['claim available', 'none'],
-         ['verdict', '<span class="verdict no">Cannot prove anything about origin</span>']]
-      : [['association set', setSize() + ' of ' + TOTAL + ' deposits'],
-         ['flagged inside', '0 — excluded by the set'],
-         ['claim available', 'membership &and; &not;flagged, in zero knowledge'],
-         ['verdict', '<span class="verdict ok">Provably not from a flagged deposit</span>']];
-
-    var html = '';
-    for (var r = 0; r < rows.length; r++) {
-      html += '<div class="row"><span class="k">' + rows[r][0] + '</span><span>' + rows[r][1] + '</span></div>';
-    }
-    readout.innerHTML = html;
-
-    btnMixer.setAttribute('aria-pressed', mode === 'mixer' ? 'true' : 'false');
-    btnPool.setAttribute('aria-pressed', mode === 'pool' ? 'true' : 'false');
+    var rows = mode==='mixer'
+      ? [['anonymity set',TOTAL+' deposits'],['flagged inside','14 deposits — indistinguishable'],['claim available','none'],['verdict','<span class="verdict no">Cannot prove anything about origin</span>']]
+      : [['association set',setSize()+' of '+TOTAL+' deposits'],['flagged inside','0 — excluded by the set'],['claim available','membership &and; &not;flagged, in zero knowledge'],['verdict','<span class="verdict ok">Provably not from a flagged deposit</span>']];
+    var html=''; for(var r2=0;r2<rows.length;r2++){html+='<div class="row"><span class="k">'+rows[r2][0]+'</span><span>'+rows[r2][1]+'</span></div>';}
+    readout.innerHTML=html;
+    btnMixer.setAttribute('aria-pressed',mode==='mixer'?'true':'false');
+    btnPool.setAttribute('aria-pressed',mode==='pool'?'true':'false');
   }
-
-  btnMixer.addEventListener('click', function () { mode = 'mixer'; render(); });
-  btnPool.addEventListener('click', function () { mode = 'pool'; render(); });
+  btnMixer.addEventListener('click',function(){mode='mixer';render();});
+  btnPool.addEventListener('click',function(){mode='pool';render();});
   render();
 })();
 </script>
