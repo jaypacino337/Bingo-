@@ -13,8 +13,11 @@
 //! ceremony. See ../README.md.
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::alt_bn128::compression::prelude::*;
 use anchor_lang::system_program;
+use groth16_solana::groth16::Groth16Verifier;
+
+mod vk;
+use vk::{NR_PUBLIC_INPUTS, VERIFYING_KEY};
 
 declare_id!("z5o1111111111111111111111111111111111111111");
 
@@ -73,7 +76,10 @@ pub mod zsol {
         )?;
 
         pool.current_root_slot = (pool.current_root_slot + 1) % (ROOT_HISTORY as u8);
-        pool.roots[pool.current_root_slot as usize] = new_root;
+        // Bind the index first: indexing `roots` mutably while reading
+        // `current_root_slot` in the same expression is a borrow conflict.
+        let slot = pool.current_root_slot as usize;
+        pool.roots[slot] = new_root;
         let leaf_index = pool.next_index;
         pool.next_index += 1;
 
@@ -183,15 +189,29 @@ fn pubkey_to_field(pk: &Pubkey) -> [u8; 32] {
     out
 }
 
-/// Groth16 pairing check via Solana's alt_bn128 syscalls, using the embedded
-/// verifying key from the trusted setup. Returns Ok(true) iff the proof is valid.
-fn verify_groth16(_proof: &Groth16Proof, _public_inputs: &[[u8; 32]]) -> Result<bool> {
-    // The full implementation pairs (A,B)·(alpha,beta)·(vk_x,gamma)·(C,delta)
-    // using sol_alt_bn128_pairing over VERIFYING_KEY (vk.rs, generated from the
-    // circuit's setup). Wired once the trusted-setup ceremony has produced the
-    // key; until then this returns an explicit error rather than a false accept,
-    // so the program can never silently approve a withdrawal.
-    Err(ZsolError::VerifierNotInitialized.into())
+/// Groth16 pairing check via Solana's alt_bn128 syscalls, against the embedded
+/// verifying key (`vk.rs`, generated from the circuit's trusted setup).
+///
+/// Verifies e(A,B) · e(α,β) · e(vk_x,γ) · e(C,δ) == 1 where
+/// vk_x = IC[0] + Σ input_i · IC[i]. Returns Ok(true) only if the proof is valid;
+/// any malformed point, wrong input count, or failed pairing is an error, so the
+/// program can never silently accept a withdrawal.
+///
+/// Byte layout (groth16-solana convention, matching the Ethereum precompile):
+/// big-endian field elements, G2 coordinates as c1‖c0. `proof.a` must be the
+/// NEGATED A point — the submitter (SDK / relayer) negates it off-chain. A
+/// non-negated A simply fails to verify; it cannot be used to forge.
+fn verify_groth16(proof: &Groth16Proof, public_inputs: &[[u8; 32]]) -> Result<bool> {
+    require!(public_inputs.len() == NR_PUBLIC_INPUTS, ZsolError::InvalidProof);
+    let inputs: &[[u8; 32]; NR_PUBLIC_INPUTS] = public_inputs
+        .try_into()
+        .map_err(|_| error!(ZsolError::InvalidProof))?;
+
+    let mut verifier =
+        Groth16Verifier::new(&proof.a, &proof.b, &proof.c, inputs, &VERIFYING_KEY)
+            .map_err(|_| error!(ZsolError::InvalidProof))?;
+
+    verifier.verify().map_err(|_| error!(ZsolError::InvalidProof))
 }
 
 // ---- Accounts ----
@@ -232,17 +252,23 @@ impl NullifierRecord {
 
 // ---- Contexts ----
 
+/// One pool PDA per denomination — seeded on the denomination itself, so
+/// 1 SOL / 10 SOL / 100 SOL pools are distinct, deterministic addresses.
 #[derive(Accounts)]
+#[instruction(denomination: u64)]
 pub struct InitPool<'info> {
-    #[account(init, payer = authority, space = Pool::LEN, seeds = [b"pool", &denomination_seed(authority.key)], bump)]
+    #[account(
+        init,
+        payer = authority,
+        space = Pool::LEN,
+        seeds = [b"pool".as_ref(), &denomination.to_le_bytes()],
+        bump
+    )]
     pub pool: Account<'info, Pool>,
     #[account(mut)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
-
-// Helper so the seed macro above stays readable.
-fn denomination_seed(k: &Pubkey) -> [u8; 32] { k.to_bytes() }
 
 #[derive(Accounts)]
 #[instruction(root: [u8; 32])]

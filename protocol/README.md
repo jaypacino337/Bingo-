@@ -13,10 +13,17 @@ it work."
 ## What actually works right now
 
 ```
-protocol/sdk/        ✅ runs, 10/10 tests passing
+protocol/sdk/        ✅ runs, full test suite passing (protocol + proof formatting)
 protocol/circuits/   ✅ compiles, proves, and VERIFIES end-to-end (real zk proof)
-protocol/programs/   ✍️  written — needs verifier wiring + anchor build + audit
+protocol/programs/   ✅ compiles, Groth16 verifier WIRED to the real dev key
 ```
+
+**The on-chain verifier is wired.** `programs/zsol/src/vk.rs` is generated straight
+from the circuit's verifying key (`circuits/vk-to-rust.js`), and `verify_groth16`
+runs the real pairing check via `groth16-solana` over Solana's alt_bn128 syscalls.
+`sdk/src/proof.ts` produces the exact bytes the program verifies — big-endian,
+G2 as c1‖c0, and the **negated A point** the verifier convention requires (a
+non-negated A just fails to verify; it can never forge). `cargo check` is clean.
 
 **The zero-knowledge proof system works.** `bash circuits/build.sh` compiles the
 circuit (10,350 constraints), builds a witness from the SDK, runs a Groth16 setup,
@@ -90,9 +97,9 @@ trusted setup is embedded.** That is a safety choice, not an omission.
 2. ✅ **Compile the circuit + prove/verify** — done. `circuits/build.sh` runs it
    end-to-end and a real proof verifies (tamper-rejected). Production still needs
    a multi-party ceremony to replace the local throwaway setup key.
-3. **Wire the verifier** — embed the verifying key (dev key saved at
-   `circuits/artifacts/verification_key.dev.json`), implement the alt_bn128
-   pairing check in `verify_groth16`, confirm the SDK's proofs verify on-chain.
+3. ✅ **Wire the verifier** — done. Verifying key embedded (`vk.rs`), pairing
+   check implemented, program compiles. What remains here is *observing* a real
+   proof verify on a live validator, which is step 4.
 4. **Devnet** — `anchor build && anchor deploy` to devnet, end-to-end
    deposit→withdraw against the deployed program. (This sandbox can't reach
    Solana, so this step runs on your machine.)
