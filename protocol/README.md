@@ -4,11 +4,24 @@ The real protocol — not the landing page. Three legs: an off-chain SDK, a
 zero-knowledge circuit, and a Solana program. This is the honest start of "making
 it work."
 
-> **UNAUDITED. NOT DEPLOYED. NO REAL SOL.** The SDK runs and is tested today. The
-> circuit and program are written and internally consistent but require
-> compilation, a trusted-setup ceremony, wiring the verifier, devnet testing, and
-> a security audit before they can touch mainnet or real funds. Skipping any of
-> that is how pools get drained. See "Build path" below.
+> **UNAUDITED. DEVNET ONLY. NO REAL SOL.** The SDK runs and is tested, the circuit
+> proves and verifies, and the program is **deployed and live on Solana devnet**.
+> It still requires a multi-party trusted-setup ceremony and a security audit
+> before it can touch mainnet or real funds. Skipping either is how pools get
+> drained. See "Build path" below.
+
+## Live on devnet
+
+| | |
+|---|---|
+| **Program ID** | `8GMgaGZ88xh5dQbYtCFoDxPoUmAxMHzo43if7nBA9apX` |
+| **Cluster** | devnet |
+| **Explorer** | https://explorer.solana.com/address/8GMgaGZ88xh5dQbYtCFoDxPoUmAxMHzo43if7nBA9apX?cluster=devnet |
+| **Deploy signature** | `HSdR4Jzr4kD99TzXGN7LMCxQGKPfwKrCFjMCDLGRR5pXVFHfDQehWzX8FRNFWorPJbvvBTHK2tBtE7ZJnLAqap7` |
+| **Verifying key** | the **dev** key — devnet demonstration only, not a ceremony key |
+
+The program is upgradeable. The embedded verifying key came from a local throwaway
+setup, so this deployment is for demonstration and testing, never real funds.
 
 ## What actually works right now
 
@@ -100,9 +113,8 @@ trusted setup is embedded.** That is a safety choice, not an omission.
 3. ✅ **Wire the verifier** — done. Verifying key embedded (`vk.rs`), pairing
    check implemented, program compiles. What remains here is *observing* a real
    proof verify on a live validator, which is step 4.
-4. **Devnet** — `anchor build && anchor deploy` to devnet, end-to-end
-   deposit→withdraw against the deployed program. (This sandbox can't reach
-   Solana, so this step runs on your machine.)
+4. ✅ **Devnet** — deployed and live (program ID above). Next within this step:
+   run an end-to-end deposit→withdraw against the live program with a real proof.
 5. **Audit** — independent circuit + program audit. No mainnet before it passes.
 6. **Mainnet** — only after 5.
 
