@@ -71,3 +71,21 @@ two-minute step:
 Until you set that, the form falls back to opening the visitor's email app
 addressed to `WAITLIST_FALLBACK_EMAIL` — change that constant to your real inbox
 so no signup is lost. Both values sit side by side in the one `<script>` block.
+
+## Going live: the buy + X buttons
+
+The header has a **Buy $ZSOL** button and an **X** button. They show a muted
+"soon" state until you fill two values — because the pump.fun CA doesn't exist
+until you launch the token.
+
+Once you've launched on pump.fun, open `index.html`, find the
+**"Header buy + X buttons"** script near the bottom, and set:
+
+```js
+var CONTRACT_ADDRESS = "";  // paste the pump.fun mint (CA) here
+var X_URL = "";             // paste your X link here
+```
+
+Fill either one and that button goes live instantly (Buy → the pump.fun page).
+Leave a value empty to keep that button in its "soon" state. That's the whole
+change — commit and redeploy.

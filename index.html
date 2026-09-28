@@ -139,8 +139,27 @@
   .brand .mark svg { display: block; }
   .status-pill {
     font-family: "IBM Plex Mono", monospace; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
-    padding: 5px 10px; border-radius: 999px; background: var(--amber-soft); color: var(--amber);
-    border: 1px solid color-mix(in srgb, var(--amber) 34%, transparent); white-space: nowrap;
+    padding: 5px 10px; border-radius: 999px; background: var(--proven-soft); color: var(--proven);
+    border: 1px solid color-mix(in srgb, var(--proven) 34%, transparent); white-space: nowrap;
+  }
+  .bar-actions { display: flex; align-items: center; gap: 10px; }
+  .hbtn {
+    display: inline-flex; align-items: center; gap: 7px; font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem; letter-spacing: .03em; font-weight: 600; text-decoration: none;
+    padding: 8px 14px; border-radius: 10px; transition: transform .12s, filter .16s, opacity .16s; white-space: nowrap;
+  }
+  .hbtn-buy { color: #fff; background: var(--grad); box-shadow: 0 6px 16px -6px rgba(153,69,255,.55); }
+  .hbtn-buy:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .hbtn-x { color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule); padding: 8px 11px; }
+  .hbtn-x:hover { color: var(--ink); border-color: var(--accent); }
+  .hbtn.is-soon { opacity: .55; cursor: default; pointer-events: none; }
+  .soon-tag {
+    font-size: .58rem; text-transform: uppercase; letter-spacing: .1em; background: rgba(255,255,255,.25);
+    padding: 2px 6px; border-radius: 999px; font-weight: 700;
+  }
+  @media (max-width: 560px) {
+    .status-pill { display: none; }
+    .hbtn-buy .soon-tag { display: none; }
   }
 
   /* hero */
@@ -281,7 +300,15 @@
       </span>
       zSOL
     </div>
-    <span class="status-pill">Protocol design · not deployed</span>
+    <div class="bar-actions">
+      <span class="status-pill" title="The program is live on Solana devnet; mainnet follows a trusted-setup ceremony and audit.">◎ Devnet live</span>
+      <!-- Buy button: renders "soon" until the pump.fun CA exists. One-line swap
+           below in the script (CONTRACT_ADDRESS) once the token is launched. -->
+      <a id="buy-btn" class="hbtn hbtn-buy is-soon" href="#" aria-disabled="true">Buy $ZSOL <span class="soon-tag">soon</span></a>
+      <a id="x-btn" class="hbtn hbtn-x is-soon" href="#" aria-label="zSOL on X" aria-disabled="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+    </div>
   </div>
 </header>
 
@@ -524,6 +551,38 @@
   btnMixer.addEventListener('click',function(){mode='mixer';render();});
   btnPool.addEventListener('click',function(){mode='pool';render();});
   render();
+})();
+
+/* ---- Header buy + X buttons ----
+   These render as "soon" until you fill the two values below.
+
+   1. CONTRACT_ADDRESS — after you launch the token on pump.fun, paste the mint
+      (the CA) here. The Buy button then links straight to the pump.fun page.
+   2. X_URL — your X profile or post link.
+
+   That's the whole swap. Leave a value "" to keep that button in its soon state. */
+(function () {
+  var CONTRACT_ADDRESS = "";  // e.g. "5x...pump"  (the pump.fun mint / CA)
+  var X_URL = "";             // e.g. "https://x.com/zsol"
+
+  var buy = document.getElementById('buy-btn');
+  if (buy && CONTRACT_ADDRESS) {
+    buy.href = "https://pump.fun/coin/" + CONTRACT_ADDRESS;
+    buy.target = "_blank";
+    buy.rel = "noopener";
+    buy.classList.remove('is-soon');
+    buy.removeAttribute('aria-disabled');
+    buy.innerHTML = 'Buy $ZSOL';
+  }
+
+  var x = document.getElementById('x-btn');
+  if (x && X_URL) {
+    x.href = X_URL;
+    x.target = "_blank";
+    x.rel = "noopener";
+    x.classList.remove('is-soon');
+    x.removeAttribute('aria-disabled');
+  }
 })();
 
 /* ---- Waitlist ----
