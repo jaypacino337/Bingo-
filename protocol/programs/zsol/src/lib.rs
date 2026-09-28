@@ -19,7 +19,7 @@ use groth16_solana::groth16::Groth16Verifier;
 mod vk;
 use vk::{NR_PUBLIC_INPUTS, VERIFYING_KEY};
 
-declare_id!("z5o1111111111111111111111111111111111111111");
+declare_id!("8GMgaGZ88xh5dQbYtCFoDxPoUmAxMHzo43if7nBA9apX");
 
 /// Tree depth — must equal the circuit's `Withdraw(depth)`.
 pub const TREE_DEPTH: usize = 20;
