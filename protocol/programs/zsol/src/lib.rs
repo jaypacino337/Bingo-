@@ -133,16 +133,39 @@ pub mod zsol {
         );
 
         // 5. Pay out: denomination - fee to recipient, fee to relayer.
+        // The vault is a system-owned PDA, so lamports leave it only through a
+        // System Program transfer signed by the vault's seeds — the program
+        // cannot decrement a balance it does not own.
         require!(fee <= pool.denomination, ZsolError::FeeTooHigh);
         let payout = pool.denomination - fee;
 
-        let seeds: &[&[u8]] = &[b"vault", pool.to_account_info().key.as_ref(), &[ctx.bumps.vault]];
-        **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= pool.denomination;
-        **ctx.accounts.recipient.to_account_info().try_borrow_mut_lamports()? += payout;
+        let pool_key = pool.key();
+        let vault_seeds: &[&[u8]] = &[b"vault", pool_key.as_ref(), &[ctx.bumps.vault]];
+
+        system_program::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.system_program.to_account_info(),
+                system_program::Transfer {
+                    from: ctx.accounts.vault.to_account_info(),
+                    to: ctx.accounts.recipient.to_account_info(),
+                },
+                &[vault_seeds],
+            ),
+            payout,
+        )?;
         if fee > 0 {
-            **ctx.accounts.relayer.to_account_info().try_borrow_mut_lamports()? += fee;
+            system_program::transfer(
+                CpiContext::new_with_signer(
+                    ctx.accounts.system_program.to_account_info(),
+                    system_program::Transfer {
+                        from: ctx.accounts.vault.to_account_info(),
+                        to: ctx.accounts.relayer.to_account_info(),
+                    },
+                    &[vault_seeds],
+                ),
+                fee,
+            )?;
         }
-        let _ = seeds; // vault is a PDA system account; lamport moves are direct.
 
         emit!(WithdrawEvent { nullifier, recipient, payout, fee });
         Ok(())

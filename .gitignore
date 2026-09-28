@@ -29,3 +29,4 @@ protocol/programs/**/target/
 protocol/circuits/input.json
 protocol/circuits/expected.json
 protocol/circuits/build/
+protocol/demo/node_modules/
