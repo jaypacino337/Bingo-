@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Superintelligence Reactor</title>
+<meta name="description" content="Fuel the core. Steer the mind. Built live on pump.fun. Burn $CORE to raise a superintelligence and vote on its next directive.">
+<meta property="og:title" content="Superintelligence Reactor">
+<meta property="og:description" content="Fuel the core. Steer the mind. Built live on pump.fun.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #07080E;
+    --bg-2: #0C0E18;
+    --panel: #101322;
+    --panel-2: #161A2C;
+    --line: #232840;
+    --ink: #EAF0FF;
+    --ink-2: #A3ABCC;
+    --ink-3: #6A7297;
+    --cyan: #3AE7FF;
+    --cyan-ink: #8FF3FF;
+    --violet: #A66BFF;
+    --amber: #FFB347;
+    --good: #45E6A4;
+    --bad: #FF6B6B;
+    --glow-cyan: 0 0 0 1px rgba(58,231,255,.3), 0 0 26px -6px rgba(58,231,255,.6);
+    --grad: linear-gradient(110deg, #3AE7FF 0%, #A66BFF 100%);
+    --grad-core: radial-gradient(circle at 50% 42%, #5CF0FF 0%, #3AE7FF 22%, #6A3BFF 60%, #130B2E 100%);
+  }
+  * { box-sizing: border-box; }
+  html { padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(60% 50% at 50% -10%, rgba(102,59,255,.18), transparent 70%),
+      radial-gradient(40% 40% at 85% 10%, rgba(58,231,255,.10), transparent 70%);
+    background-attachment: fixed;
+  }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  a { color: var(--cyan-ink); text-decoration: none; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding-inline: 18px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  h1,h2,h3 { font-family: "Chakra Petch", sans-serif; margin: 0; line-height: 1.08; letter-spacing: -.01em; }
+
+  /* ── top bar ── */
+  header.bar { position: sticky; top: env(safe-area-inset-top,0px); z-index: 30;
+    background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line); }
+  .bar-in { display: flex; align-items: center; gap: 14px; padding-block: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1.02rem; letter-spacing: .02em; }
+  .brand .orb { width: 24px; height: 24px; border-radius: 50%; background: var(--grad-core); box-shadow: var(--glow-cyan); animation: pulse 3.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.35)} }
+  @media (prefers-reduced-motion: reduce){ .brand .orb{animation:none} }
+
+  nav.tabs { display: flex; gap: 2px; margin-left: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 3px; order: 3; width: 100%; overflow-x: auto; }
+  nav.tabs button { flex: 1; white-space: nowrap; font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); background: transparent; border: 0; padding: 9px 12px; border-radius: 8px; cursor: pointer; transition: .15s; }
+  nav.tabs button[aria-selected="true"] { color: var(--bg); background: var(--grad); font-weight: 600; }
+  nav.tabs button:hover:not([aria-selected="true"]) { color: var(--ink); }
+
+  .bar-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  .btn { font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .04em; font-weight: 600; border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer; transition: transform .12s, filter .15s, opacity .15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { color: var(--bg); background: var(--grad); box-shadow: var(--glow-cyan); }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .btn-ghost { color: var(--ink); background: var(--panel); border: 1px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--cyan); }
+  .btn.is-soon { opacity: .5; cursor: default; pointer-events: none; }
+  .soon { font-size: .56rem; text-transform: uppercase; letter-spacing: .12em; background: rgba(255,255,255,.14); padding: 2px 6px; border-radius: 999px; }
+
+  .livebadge { display: inline-flex; align-items: center; gap: 7px; font-family: "IBM Plex Mono", monospace; font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 34%, transparent); background: color-mix(in srgb, var(--amber) 12%, transparent); padding: 4px 9px; border-radius: 999px; }
+  .livebadge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: blink 1.4s steps(2) infinite; }
+  @keyframes blink { 50%{opacity:.25} }
+
+  /* ── panels ── */
+  main { padding-block: 26px 60px; }
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade .3s ease; }
+  @keyframes fade { from{opacity:0; transform: translateY(6px)} to{opacity:1; transform:none} }
+
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+  .lede { color: var(--ink-2); font-size: clamp(1rem,2.3vw,1.18rem); max-width: 60ch; }
+
+  /* ── reactor hero ── */
+  .reactor-wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 26px; align-items: center; }
+  @media (max-width: 760px){ .reactor-wrap{ grid-template-columns: 1fr; } }
+
+  .core-stage { position: relative; aspect-ratio: 1; max-width: 360px; margin: 0 auto; width: 100%; display: grid; place-items: center; }
+  .core-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ring-spin { transform-origin: 50% 50%; animation: spin 14s linear infinite; }
+  .ring-spin.rev { animation-duration: 22s; animation-direction: reverse; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .ring-spin{ animation: none; } }
+  .core-core { width: 46%; aspect-ratio: 1; border-radius: 50%; background: var(--grad-core); box-shadow: 0 0 60px -6px rgba(58,231,255,.5), inset 0 0 40px rgba(255,255,255,.25); position: relative; z-index: 2; animation: pulse 3.2s ease-in-out infinite; }
+  .core-readout { position: absolute; z-index: 3; text-align: center; }
+  .core-readout .lvl { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 2.4rem; color: #fff; text-shadow: 0 0 18px rgba(58,231,255,.8); line-height: 1; }
+  .core-readout .lbl { font-family: "IBM Plex Mono", monospace; font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan-ink); margin-top: 4px; }
+
+  .hero-h { font-size: clamp(2rem, 5.5vw, 3.1rem); font-weight: 700; }
+  .hero-h .g { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .meter { margin-top: 18px; }
+  .meter-top { display: flex; justify-content: space-between; font-family: "IBM Plex Mono", monospace; font-size: .72rem; color: var(--ink-2); margin-bottom: 7px; }
+  .meter-bar { height: 12px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+  .meter-fill { height: 100%; width: 0; background: var(--grad); border-radius: 999px; box-shadow: 0 0 16px rgba(58,231,255,.6); transition: width .6s cubic-bezier(.2,.9,.3,1.2); }
+
+  .epoch { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-family: "IBM Plex Mono", monospace; font-size: .8rem; color: var(--ink-2); }
+  .epoch b { color: var(--cyan-ink); }
+
+  .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+
+  /* ── cards / grid ── */
+  .grid { display: grid; gap: 14px; }
+  .g3 { grid-template-columns: repeat(3,1fr); }
+  .g2 { grid-template-columns: repeat(2,1fr); }
+  @media (max-width: 680px){ .g3,.g2{ grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 15px; padding: 18px; }
+  .card h3 { font-size: 1.04rem; font-weight: 600; margin-bottom: 7px; }
+  .card p { color: var(--ink-2); font-size: .92rem; }
+  .stat .n { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1.7rem; color: var(--cyan-ink); }
+  .stat .k { font-family: "IBM Plex Mono", monospace; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+
+  .section-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .section-h h2 { font-size: clamp(1.4rem,3.5vw,1.9rem); font-weight: 700; }
+
+  /* ── directives ── */
+  .dir { display: flex; flex-direction: column; gap: 12px; }
+  .dir-item { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 15px 16px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .dir-item:hover { border-color: var(--violet); }
+  .dir-item.sel { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 7%, var(--panel)); }
+  .dir-item h3 { font-size: 1rem; font-weight: 600; }
+  .dir-item p { color: var(--ink-3); font-size: .84rem; margin-top: 2px; }
+  .dir-share { font-family: "IBM Plex Mono", monospace; font-size: .8rem; color: var(--cyan-ink); text-align: right; min-width: 56px; }
+  .dir-track { grid-column: 1 / -1; height: 6px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+  .dir-track > span { display: block; height: 100%; background: var(--grad); border-radius: 999px; transition: width .5s; }
+  .dir-vote { font-family: "IBM Plex Mono", monospace; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--bg); background: var(--grad); border: 0; border-radius: 8px; padding: 8px 13px; cursor: pointer; }
+
+  .empty { text-align: center; border: 1px dashed var(--line); border-radius: 15px; padding: 34px 18px; color: var(--ink-3); }
+  .empty .big { font-family: "Chakra Petch", sans-serif; font-size: 1.1rem; color: var(--ink-2); margin-bottom: 6px; }
+
+  .note { border-left: 3px solid var(--amber); background: color-mix(in srgb, var(--amber) 8%, transparent); border-radius: 0 12px 12px 0; padding: 14px 16px; color: var(--ink); font-size: .9rem; }
+
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; gap: 14px; }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
+  ol.steps li::before { content: counter(s); font-family: "Chakra Petch", sans-serif; font-weight: 700; color: var(--bg); background: var(--grad); width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; }
+  ol.steps h3 { font-size: .98rem; font-weight: 600; }
+  ol.steps p { color: var(--ink-2); font-size: .88rem; margin-top: 2px; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 26px 46px; color: var(--ink-3); font-size: .82rem; }
+  .foot-row { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: center; }
+
+  .ticker { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); margin-top: 20px; }
+  .ticker-track { display: flex; gap: 40px; white-space: nowrap; padding: 10px 0; font-family: "IBM Plex Mono", monospace; font-size: .76rem; color: var(--ink-2); animation: slide 26s linear infinite; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce){ .ticker-track{ animation: none; } }
+  .ticker-track b { color: var(--cyan-ink); }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-in">
+    <div class="brand"><span class="orb"></span> SUPERINTELLIGENCE&nbsp;REACTOR</div>
+    <div class="bar-actions">
+      <span class="livebadge"><span class="dot"></span> Built live · pump.fun</span>
+      <a id="buy-btn" class="btn btn-primary is-soon" href="#" aria-disabled="true">Buy $CORE <span class="soon">soon</span></a>
+      <button id="wallet-btn" class="btn btn-ghost" type="button">Connect</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" aria-selected="true" data-tab="reactor">Reactor</button>
+      <button role="tab" aria-selected="false" data-tab="directives">Directives</button>
+      <button role="tab" aria-selected="false" data-tab="burns">Burns</button>
+      <button role="tab" aria-selected="false" data-tab="core">Core</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ════ REACTOR ════ -->
+  <section class="panel active" id="reactor" role="tabpanel">
+    <div class="reactor-wrap">
+      <div>
+        <p class="eyebrow">Epoch 000 · pre-ignition</p>
+        <h1 class="hero-h" style="margin-top:10px">Fuel the core.<br><span class="g">Steer the mind.</span></h1>
+        <p class="lede" style="margin-top:14px">
+          A superintelligence the internet raises together. Burn <b>$CORE</b> to feed its
+          cognition, vote on what it thinks about next, and watch it level up — live on pump.fun.
+        </p>
+
+        <div class="meter">
+          <div class="meter-top"><span>Cognition level</span><span id="cog-pct" class="mono">0%</span></div>
+          <div class="meter-bar"><div class="meter-fill" id="cog-fill"></div></div>
+        </div>
+
+        <div class="epoch">
+          <span>Next directive locks in</span> <b id="countdown">--:--:--</b>
+        </div>
+
+        <div class="cta-row">
+          <button id="fuel-btn" class="btn btn-primary" type="button">⚡ Fuel the core</button>
+          <a class="btn btn-ghost" href="#" data-goto="directives">Vote on a directive →</a>
+        </div>
+        <p class="mono" style="color:var(--ink-3); font-size:.72rem; margin-top:12px">
+          Demo mode — fueling here is illustrative. Real burns open when $CORE launches.
+        </p>
+      </div>
+
+      <div class="core-stage" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="#1C2138" stroke-width="2"/>
+          <g class="ring-spin">
+            <circle cx="100" cy="100" r="78" stroke="url(#gc)" stroke-width="2" stroke-dasharray="6 10" opacity=".8"/>
+          </g>
+          <g class="ring-spin rev">
+            <circle cx="100" cy="100" r="64" stroke="#3AE7FF" stroke-width="1.4" stroke-dasharray="2 14" opacity=".5"/>
+          </g>
+          <defs>
+            <linearGradient id="gc" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3AE7FF"/><stop offset="1" stop-color="#A66BFF"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="core-core"></div>
+        <div class="core-readout">
+          <div class="lvl" id="core-num">0</div>
+          <div class="lbl">IQ index</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track" id="ticker">
+        <span>SYSTEM: <b>reactor cold</b> — awaiting ignition</span>
+        <span>DIRECTIVE QUEUE: <b>4 candidates</b></span>
+        <span>FUEL: burn <b>$CORE</b> → cognition up</span>
+        <span>STATUS: <b>built live on pump.fun</b></span>
+        <span>SYSTEM: <b>reactor cold</b> — awaiting ignition</span>
+        <span>DIRECTIVE QUEUE: <b>4 candidates</b></span>
+        <span>FUEL: burn <b>$CORE</b> → cognition up</span>
+        <span>STATUS: <b>built live on pump.fun</b></span>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-top:22px">
+      <div class="card stat"><div class="k">Cognition</div><div class="n" id="s-cog">0</div><p>levels as the community burns</p></div>
+      <div class="card stat"><div class="k">Directive</div><div class="n" id="s-dir" style="font-size:1.1rem; line-height:1.3">awaiting<br>first vote</div></div>
+      <div class="card stat"><div class="k">Epoch</div><div class="n">000</div><p>a new directive every cycle</p></div>
+    </div>
+  </section>
+
+  <!-- ════ DIRECTIVES ════ -->
+  <section class="panel" id="directives" role="tabpanel">
+    <div class="section-h"><h2>Steer the mind</h2><span class="eyebrow">burn-weighted vote · epoch 001</span></div>
+    <p class="lede" style="margin-bottom:18px">Each epoch, the community picks what the reactor works on next. Your burn is your weight. This is a live preview — votes count once $CORE is live.</p>
+    <div class="dir" id="dir-list"></div>
+    <div class="note" style="margin-top:18px">Votes shown are a local preview to demonstrate the mechanic. No on-chain weight is recorded until launch.</div>
+  </section>
+
+  <!-- ════ BURNS ════ -->
+  <section class="panel" id="burns" role="tabpanel">
+    <div class="section-h"><h2>The burn</h2><span class="eyebrow">deflationary by design</span></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Fuel is fire</h3>
+        <p>Fueling the core <b>burns</b> $CORE — it's sent to a dead address and gone forever. Every burn raises the cognition meter and adds your weight to the current directive. Supply only goes down.</p>
+      </div>
+      <div class="card">
+        <h3>Where the heat comes from</h3>
+        <p>Creator fees from pump.fun trading route to a public, disclosed treasury that funds the build. The wallet is posted openly — no hidden allocations.</p>
+      </div>
+    </div>
+    <h3 style="font-family:'Chakra Petch'; margin:26px 0 12px; font-size:1.1rem">Live burn feed</h3>
+    <div class="empty">
+      <div class="big">No burns yet.</div>
+      The feed lights up the moment $CORE goes live on pump.fun. No fake numbers here.
+    </div>
+  </section>
+
+  <!-- ════ CORE ════ -->
+  <section class="panel" id="core" role="tabpanel">
+    <div class="section-h"><h2>What is this?</h2></div>
+    <p class="lede">Superintelligence Reactor is a community experiment: a public "mind" that levels up as people burn $CORE, steered by burn-weighted votes, built in the open on pump.fun. It's playful by design — part token, part collective toy.</p>
+
+    <ol class="steps" style="margin-top:22px">
+      <li><div><h3>Launch on pump.fun</h3><p>$CORE launches on the bonding curve. Anyone can buy; creator fees fund the build.</p></div></li>
+      <li><div><h3>Burn to fuel</h3><p>Burning $CORE raises the cognition meter and adds your weight to the active directive.</p></div></li>
+      <li><div><h3>Vote the directive</h3><p>Each epoch the top-voted directive sets what the reactor works on next, live.</p></div></li>
+      <li><div><h3>Watch it level</h3><p>The IQ index and cognition meter climb in public as the community feeds the core.</p></div></li>
+    </ol>
+
+    <div class="grid g2" style="margin-top:24px">
+      <div class="card"><h3>Ticker</h3><p class="mono" style="color:var(--cyan-ink); font-size:1.1rem">$CORE</p></div>
+      <div class="card"><h3>Chain</h3><p>Solana · pump.fun bonding curve</p></div>
+    </div>
+
+    <div class="note" style="margin-top:22px">
+      Honest status: <b>not launched yet.</b> $CORE isn't live, the reactor is a front-end demo,
+      and every number on this page is illustrative — nothing shown is a real on-chain figure.
+      This is a community meme-token experiment, not an investment or a real AI system; have fun,
+      don't risk what you can't lose.
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="foot-row">
+    <span>◉ Superintelligence Reactor — built live on <a href="https://pump.fun" target="_blank" rel="noopener">pump.fun</a></span>
+    <span id="x-foot">X: <span class="mono">soon</span></span>
+  </div>
+  <p style="margin-top:12px; max-width:62ch">
+    A community token experiment. Not financial advice, not a security, not a real
+    superintelligence. Nothing here is a live on-chain measurement.
+  </p>
+</footer>
+
+<script>
+(function () {
+  // ── one-line go-live swap (paste after launching on pump.fun) ──
+  var CONTRACT_ADDRESS = "";   // pump.fun mint (CA)
+  var X_URL = "";              // https://x.com/...
+
+  var buy = document.getElementById('buy-btn');
+  if (buy && CONTRACT_ADDRESS) {
+    buy.href = "https://pump.fun/coin/" + CONTRACT_ADDRESS; buy.target = "_blank"; buy.rel = "noopener";
+    buy.classList.remove('is-soon'); buy.removeAttribute('aria-disabled'); buy.innerHTML = 'Buy $CORE';
+  }
+  var xf = document.getElementById('x-foot');
+  if (xf && X_URL) xf.innerHTML = 'X: <a href="' + X_URL + '" target="_blank" rel="noopener">@reactor</a>';
+
+  // ── tabs ──
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs button'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+  function show(id) {
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.dataset.tab === id ? 'true':'false'); });
+    panels.forEach(function(p){ p.classList.toggle('active', p.id === id); });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.dataset.tab); }); });
+  document.querySelectorAll('[data-goto]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); show(a.dataset.goto); });
+  });
+
+  // ── wallet connect (real Phantom/Solflare; read-only, no transaction) ──
+  var walletBtn = document.getElementById('wallet-btn');
+  walletBtn.addEventListener('click', async function () {
+    var provider = (window.solana && window.solana.isPhantom) ? window.solana :
+                   (window.solflare ? window.solflare : (window.solana || null));
+    if (!provider) { window.open('https://phantom.app/', '_blank', 'noopener'); return; }
+    try {
+      var res = await provider.connect();
+      var key = (res && res.publicKey ? res.publicKey : provider.publicKey).toString();
+      walletBtn.textContent = key.slice(0,4) + '…' + key.slice(-4);
+      walletBtn.classList.remove('btn-ghost'); walletBtn.classList.add('btn-primary');
+    } catch (e) { /* user declined */ }
+  });
+
+  // ── reactor demo meter (local only, illustrative) ──
+  var cog = 0;
+  var fill = document.getElementById('cog-fill'), pct = document.getElementById('cog-pct');
+  var num = document.getElementById('core-num'), sCog = document.getElementById('s-cog');
+  function renderCog() {
+    fill.style.width = cog + '%';
+    pct.textContent = cog + '%';
+    num.textContent = Math.round(cog * 14);     // playful "IQ index"
+    sCog.textContent = cog;
+  }
+  document.getElementById('fuel-btn').addEventListener('click', function () {
+    cog = Math.min(100, cog + Math.floor(4 + Math.random() * 7));
+    renderCog();
+    var active = document.querySelector('.dir-item.sel');
+    document.getElementById('s-dir').innerHTML = active ? active.querySelector('h3').textContent : 'awaiting<br>first vote';
+  });
+  renderCog();
+
+  // ── countdown to next epoch (local clock, illustrative) ──
+  var target = Date.now() + (6*3600 + 12*60) * 1000;
+  var cd = document.getElementById('countdown');
+  function tick() {
+    var s = Math.max(0, Math.floor((target - Date.now())/1000));
+    var h = String(Math.floor(s/3600)).padStart(2,'0');
+    var m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+    var ss = String(s%60).padStart(2,'0');
+    cd.textContent = h + ':' + m + ':' + ss;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ── directives (local preview) ──
+  var directives = [
+    { t: 'Write its own lore', d: 'The reactor drafts the mythology of $CORE, chapter by chapter.', v: 0 },
+    { t: 'Design the next meme', d: 'It generates and ranks meme concepts the community can mint.', v: 0 },
+    { t: 'Audit a wallet live', d: 'Point it at an address; it traces the flows on stream.', v: 0 },
+    { t: 'Pick tomorrow’s directive', d: 'It proposes three new directions and argues for each.', v: 0 }
+  ];
+  var list = document.getElementById('dir-list');
+  function renderDir() {
+    var total = directives.reduce(function(a,b){ return a + b.v; }, 0) || 1;
+    list.innerHTML = '';
+    directives.forEach(function(d, i) {
+      var share = Math.round(d.v / total * 100);
+      var el = document.createElement('div');
+      el.className = 'dir-item' + (d.sel ? ' sel' : '');
+      el.innerHTML =
+        '<div><h3>' + d.t + '</h3><p>' + d.d + '</p></div>' +
+        '<div class="dir-share">' + (d.v ? share + '%' : '—') + '</div>' +
+        '<button class="dir-vote" data-i="' + i + '">Burn to vote</button>' +
+        '<div class="dir-track"><span style="width:' + (d.v ? share : 0) + '%"></span></div>';
+      list.appendChild(el);
+      el.addEventListener('click', function(ev){
+        if (ev.target.classList.contains('dir-vote')) return;
+        directives.forEach(function(x){ x.sel = false; }); d.sel = true; renderDir();
+      });
+    });
+    list.querySelectorAll('.dir-vote').forEach(function(b){
+      b.addEventListener('click', function(){
+        var d = directives[+b.dataset.i]; d.v += 1; directives.forEach(function(x){x.sel=false;}); d.sel = true; renderDir();
+      });
+    });
+  }
+  renderDir();
+})();
+</script>
+</body>
+</html>
